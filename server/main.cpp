@@ -12,8 +12,6 @@
 
 
 int main(int argc, char* argv[]) {
-    printf("Hello world\n");
-
     CSServer* server = new CSServer(DEFAULT_NUM_THREADS);
 
     delete server;
