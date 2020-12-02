@@ -34,4 +34,6 @@ private:
     void startup                        ();
 
     void* start                         (void* arg);
+
+    void handleClient                   (int cl);
 };

@@ -93,12 +93,25 @@ void CSServer::startup()
         int cl = accept(sock, NULL, NULL);
 
         printf("Accepted client: %d\n", cl);
+
+        // look for available thread
+        for(int i = 0; i < _numThreads; i++) {
+            Thread* t = _threadPool + i;
+
+            if(t->cl == 0) {
+                // found available thread, set client and start
+                t->cl = cl;
+                if(sem_post(&(t->mutex)) != 0) err(2, "sem_post starting worker thread");
+                break;
+            }
+        }
     }
 }
 
 
 /**
  * Function for starting thread, waits on semaphore before client is accepted
+ * arg - Thread struct argument expected
  */
 void* CSServer::start(void* arg)
 {
@@ -108,9 +121,20 @@ void* CSServer::start(void* arg)
         if(sem_wait(&(thread->mutex)) != 0) err(2, "sem_wait on thread mutex");
 
         // handle client
+        handleClient(thread->cl);
 
         thread->cl = 0;
     }
 
     return 0;
+}
+
+
+/**
+ * Handle client, called from worker thread when new client available
+ * cl - client file descriptor
+ */
+void CSServer::handleClient(int cl)
+{
+    printf("Handling client: %d\n", cl);
 }

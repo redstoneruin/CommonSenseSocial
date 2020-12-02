@@ -19,6 +19,7 @@ struct hostent *hent;
 struct sockaddr_in addr;
 int sock;
 
+void printResult(int testResult);
 
 int connectionTest1();
 
@@ -38,16 +39,29 @@ int main(int argc, char* argv[])
     // create socket
     sock = socket(AF_INET, SOCK_STREAM, 0);
 
-    connectionTest1();
+
+    printf("Connection test: ");
+    printResult(connectionTest1());
 
     return 0;
 }
 
 int connectionTest1()
 {
-    printf("Connecting to server...\n");
-
     return connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+}
 
-    return 0;
+
+
+
+/**
+ * Print success or FAILED based on given result of test
+ */
+void printResult(int testResult) 
+{
+    if(testResult == 0) {
+        printf("success\n");
+    } else {
+        printf("FAILED\n");
+    }
 }
