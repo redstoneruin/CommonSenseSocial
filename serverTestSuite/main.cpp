@@ -39,12 +39,14 @@ int main(int argc, char* argv[])
     sock = socket(AF_INET, SOCK_STREAM, 0);
 
     connectionTest1();
+
+    return 0;
 }
 
 int connectionTest1()
 {
     printf("Connecting to server...\n");
-    
+
     return connect(sock, (struct sockaddr *)&addr, sizeof(addr));
 
     return 0;

@@ -30,9 +30,9 @@
  */
 CSServer::CSServer(int numThreads) :
     _numThreads(numThreads), 
+    _port(DEFAULT_PORT),
     _shouldExit(false),
-    _threadPool(nullptr),
-    _port(DEFAULT_PORT)
+    _threadPool(nullptr)
 {
 
     if(sem_init(&_mutex, 0, 0) != 0) err(2, "sem_init for main mutex");
