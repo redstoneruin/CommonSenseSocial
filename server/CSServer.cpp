@@ -92,8 +92,6 @@ void CSServer::startup()
         listen(sock, 0);
         int cl = accept(sock, NULL, NULL);
 
-        printf("Accepted client: %d\n", cl);
-
         // look for available thread
         for(int i = 0; i < _numThreads; i++) {
             Thread* t = _threadPool + i;
@@ -121,7 +119,7 @@ void* CSServer::start(void* arg)
         if(sem_wait(&(thread->mutex)) != 0) err(2, "sem_wait on thread mutex");
 
         // handle client
-        handleClient(thread->cl);
+        handleClient(thread);
 
         thread->cl = 0;
     }
@@ -132,9 +130,9 @@ void* CSServer::start(void* arg)
 
 /**
  * Handle client, called from worker thread when new client available
- * cl - client file descriptor
+ * thread - thread responsible for handling this client
  */
-void CSServer::handleClient(int cl)
+void CSServer::handleClient(Thread* thread)
 {
-    printf("Handling client: %d\n", cl);
+    printf("Handling client: %d\n", thread->cl);
 }

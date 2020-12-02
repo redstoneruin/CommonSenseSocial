@@ -35,5 +35,5 @@ private:
 
     void* start                         (void* arg);
 
-    void handleClient                   (int cl);
+    void handleClient                   (Thread* thread);
 };
