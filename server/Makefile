@@ -7,8 +7,8 @@ OBJECTS 	= $(SOURCES:.cpp=.o)
 DEPS		= $(SOURCES:.cpp=.d)
 TARGET		= csServer
 
-COMPILE 	= clang++ -std=gnu++2a -Wall -Wextra -Wpedantic -Wshadow -g -Og -c
-LINK 		= clang++ -pthread -o
+COMPILE 	= clang++ -std=gnu++2a -I../lib/botan/build/include -Wall -Wextra -Wpedantic -Wshadow -g -Og -c
+LINK 		= clang++ -L../lib/botan -lbotan-3 -fstack-protector -m64 -pthread -o
 
 COPYCOMMON 	= cp ../common/* .
 

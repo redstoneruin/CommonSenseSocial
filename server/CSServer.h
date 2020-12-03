@@ -20,6 +20,9 @@ public:
     CSServer                            (int numCores);
     ~CSServer                           ();
 
+    void startup                        ();
+
+
 private:
     int _numThreads;
     uint16_t _port;
@@ -31,9 +34,19 @@ private:
     Thread* _threadPool;
 
 
-    void startup                        ();
 
     void* start                         (void* arg);
 
     void handleClient                   (Thread* thread);
+
+    int readBytes                       (int cl, char* buf, uint16_t size);
+
+
+
+    char* getCStr                       (const char* src, uint16_t size);
+    char* getCStr                       (const char* src, uint16_t start, uint16_t size);
+
+    uint64_t getInt                     (const char* src, uint16_t size);
+    uint64_t getInt                     (const char* src, uint16_t start, uint16_t size);
+
 };

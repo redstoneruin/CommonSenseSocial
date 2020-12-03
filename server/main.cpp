@@ -14,5 +14,7 @@
 int main(int argc, char* argv[]) {
     CSServer* server = new CSServer(DEFAULT_NUM_THREADS);
 
+    server->startup();
+
     delete server;
 }

@@ -7,20 +7,27 @@
 #define DEFAULT_PORT 9251
 #define DEFAULT_SERVER_NAME "localhost"
 
+#define BASE 256
+
 #include <stdio.h>
 #include <err.h>
 #include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <math.h>
 
 #include <thread>
 
 #include <netdb.h>
 #include <sys/socket.h>
 
+#include <botan/srp6.h>
+
 
 #include "CSServer.h"
+#include "definitions.h"
 
 
 /**
@@ -51,8 +58,6 @@ CSServer::CSServer(int numThreads) :
         // start up this thread
         new std::thread(&CSServer::start, this, t);
     }
-
-    startup();
 }
 
 
@@ -121,6 +126,8 @@ void* CSServer::start(void* arg)
         // handle client
         handleClient(thread);
 
+        close(thread->cl);
+
         thread->cl = 0;
     }
 
@@ -135,4 +142,101 @@ void* CSServer::start(void* arg)
 void CSServer::handleClient(Thread* thread)
 {
     printf("Handling client: %d\n", thread->cl);
+
+    // continue reading command while connected
+    while(true) 
+    {
+        // attempt reading header from
+        if(readBytes(thread->cl, thread->threadBuf, HEADER_SIZE) < HEADER_SIZE)
+        {
+            fprintf(stderr, "Client %d exited\n", thread->cl);
+            return;
+        }
+
+        uint32_t ident = getInt(thread->threadBuf, IDENT_SIZE);
+        uint16_t command = getInt(thread->threadBuf, IDENT_SIZE, COMMAND_SIZE);
+
+        // test printout
+        printf("Received ident: %#x, with command: %#x\n", ident, command);
+    }
+}
+
+
+/* *
+ * Read the specified number of bytes from the buffer client descriptor
+ * up to the given maximum size
+ * cl - client file descriptor for 
+ */
+int CSServer::readBytes(int cl, char* buf, uint16_t size)
+{
+    int rcvSize = 0;
+
+    while(rcvSize < size) {
+        int thisRcvSize = read(cl, (void*)((uint64_t)buf + rcvSize), size - rcvSize);
+        rcvSize += thisRcvSize;
+        //printf("Received %d bytes\n", thisRcvSize);
+
+        if(thisRcvSize <= 0) return rcvSize;
+    }
+
+    return rcvSize;
+}
+
+
+/**
+ * Returns new c string in heap from source buffer, starting at index 0 and with given size
+ * src - source buffer to read string from
+ * size - size of string
+ */
+char* CSServer::getCStr(const char* src, uint16_t size)
+{
+    return getCStr(src, 0, size);
+}
+
+/**
+ * Returns a new c string stored in heap, with given start index and size from source buffer
+ * src - source buffer to read string from
+ * start - start index of string
+ * size - size of string
+ */
+char* CSServer::getCStr(const char* src, uint16_t start, uint16_t size)
+{
+    char* dest = (char*) malloc (sizeof(char) * (size + 1));
+
+    memcpy(dest, src+start, size);
+    dest[size] = (char)0;
+
+    return dest;
+}
+
+
+/**
+ * Returns the parsed integer from a source buffer starting at index 0
+ * src - buffer to read int from
+ * size - size of int in bytes
+ */
+uint64_t CSServer::getInt(const char* src, uint16_t size)
+{
+    return getInt(src, 0, size);
+}
+
+
+/**
+ * Returns the parsed integer from a given place in a source buffer
+ * src - buffer to read int from
+ * start - start index of int
+ * size - size of int in bytes
+ */
+uint64_t CSServer::getInt(const char* src, uint16_t start, uint16_t size)
+{
+    int place = 0;
+    uint64_t result = 0;
+    // go from back to front, add based on powers of 8
+    for(int i = (start+size)-1; i >= start; i--) {
+        uint8_t val = (uint8_t)src[i];
+        result += val * pow(BASE, place);
+        place++;
+    }
+
+    return result;
 }

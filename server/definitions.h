@@ -25,3 +25,11 @@
 #define SUCCESS 0x00
 #define NOT_FOUND 0x01
 #define NO_ACCESS 0x02
+
+
+/**
+ * Definitions for buffer sized
+ */
+#define HEADER_SIZE 6
+#define IDENT_SIZE 4
+#define COMMAND_SIZE 2
