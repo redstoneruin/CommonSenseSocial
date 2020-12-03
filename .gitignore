@@ -3,3 +3,5 @@
 *.d
 csServer
 csServerTestSuite
+
+lib/

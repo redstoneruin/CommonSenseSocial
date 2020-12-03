@@ -15,6 +15,9 @@
 #include <stdint.h>
 
 
+#include "definitions.h"
+
+
 struct hostent *hent;
 struct sockaddr_in addr;
 int sock;
@@ -22,6 +25,8 @@ int sock;
 void printResult(int testResult);
 
 int connectionTest1();
+
+int headerTest1();
 
 
 int main(int argc, char* argv[])
@@ -43,6 +48,9 @@ int main(int argc, char* argv[])
     printf("Connection test: ");
     printResult(connectionTest1());
 
+    printf("Header test 1: ");
+    printResult(headerTest1());
+
     return 0;
 }
 
@@ -51,7 +59,14 @@ int connectionTest1()
     return connect(sock, (struct sockaddr *)&addr, sizeof(addr));
 }
 
-
+int headerTest1()
+{
+    int result = send(sock, "testing", HEADER_SIZE, 0);
+    if(result != HEADER_SIZE) {
+        return -1;
+    }
+    return 0;
+}
 
 
 /**
@@ -62,6 +77,6 @@ void printResult(int testResult)
     if(testResult == 0) {
         printf("success\n");
     } else {
-        printf("FAILED\n");
+        printf("FAILED: %d\n", testResult);
     }
 }
