@@ -23,13 +23,10 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
-#include <botan/tls_session_manager.h>
-#include <botan/tls_server.h>
 
 
 #include "CSServer.h"
 #include "definitions.h"
-#include "tls/Callbacks.h"
 
 
 /**
@@ -144,17 +141,6 @@ void* CSServer::start(void* arg)
  */
 void CSServer::handleClient(Thread* thread)
 {
-    // prepare all the parameters
-    Botan::TLS::Session_Manager_In_Memory session_mgr(rng);
-    Botan::TLS::Default_Policy policy;
-    Callbacks callbacks(thread->cl);
-
-    // accept tls connection from client
-    Botan::TLS::Server server(callbacks,
-                            session_mgr,
-                            creds,
-                            policy,
-                            rng);
 
     printf("Handling client: %d\n", thread->cl);
 
@@ -170,7 +156,8 @@ void CSServer::handleClient(Thread* thread)
         }
 
         // pass bytes read to server
-        server.received_data((uint8_t*)thread->threadBuf, bytesRead);
+        //server.received_data((uint8_t*)thread->threadBuf, bytesRead);
+        printf("Received %zu bytes from client %d\n", bytesRead, thread->cl);
 
     }
 }

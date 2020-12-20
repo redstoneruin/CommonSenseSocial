@@ -1,13 +1,13 @@
 # Makefile for Common Sense Social server
 
-SOURCES		= main.cpp CSServer.cpp tls/ServerCredentials.cpp tls/Callbacks.cpp
-HEADERS		= CSServer.h definitions.h tls/ServerCredentials.h tls/Callbacks.h
+SOURCES		= main.cpp CSServer.cpp
+HEADERS		= CSServer.h definitions.h
 
-OBJECTS 	= main.o CSServer.o ServerCredentials.o Callbacks.o
+OBJECTS 	= main.o CSServer.o
 TARGET		= csServer
 
-COMPILE 	= clang++ -std=gnu++2a -I../lib/botan/build/include -Wall -Wextra -Wpedantic -Wshadow -g -Og -c
-LINK 		= clang++ -L../lib/botan -lbotan-3 -fstack-protector -m64 -pthread -o
+COMPILE 	= clang++ -std=gnu++2a -I../lib/openssl/include -Wall -Wextra -Wpedantic -Wshadow -g -Og -c
+LINK 		= clang++ -L../lib/openssl -lssl -lcrypto -fstack-protector -m64 -pthread -o
 
 COPYCOMMON 	= cp ../common/* .
 
