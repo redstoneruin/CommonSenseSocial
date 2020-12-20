@@ -9,6 +9,11 @@
 #include <semaphore.h>
 #include <stdint.h>
 
+// Botan includes
+#include <botan/auto_rng.h>
+
+#include "tls/ServerCredentials.h"
+
 typedef struct Thread {
     int cl;
     sem_t mutex;
@@ -32,6 +37,11 @@ private:
     bool _shouldExit;
 
     Thread* _threadPool;
+
+    // Botan
+    Botan::AutoSeeded_RNG rng;
+
+    ServerCredentials creds;
 
 
 

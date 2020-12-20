@@ -23,11 +23,13 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
-#include <botan/srp6.h>
+#include <botan/tls_session_manager.h>
+#include <botan/tls_server.h>
 
 
 #include "CSServer.h"
 #include "definitions.h"
+#include "tls/Callbacks.h"
 
 
 /**
@@ -43,6 +45,7 @@ CSServer::CSServer(int numThreads) :
 {
 
     if(sem_init(&_mutex, 0, 0) != 0) err(2, "sem_init for main mutex");
+
 
     // initialize the thread pool
     _threadPool = (Thread*) malloc (sizeof(Thread) * _numThreads);
@@ -141,23 +144,34 @@ void* CSServer::start(void* arg)
  */
 void CSServer::handleClient(Thread* thread)
 {
+    // prepare all the parameters
+    Botan::TLS::Session_Manager_In_Memory session_mgr(rng);
+    Botan::TLS::Default_Policy policy;
+    Callbacks callbacks(thread->cl);
+
+    // accept tls connection from client
+    Botan::TLS::Server server(callbacks,
+                            session_mgr,
+                            creds,
+                            policy,
+                            rng);
+
     printf("Handling client: %d\n", thread->cl);
 
     // continue reading command while connected
     while(true) 
     {
-        // attempt reading header from
-        if(readBytes(thread->cl, thread->threadBuf, HEADER_SIZE) < HEADER_SIZE)
+        size_t bytesRead;
+        // Read from client until full tls record received
+        if((bytesRead = read(thread->cl, thread->threadBuf, DEFAULT_BUF_SIZE)) == 0)
         {
             fprintf(stderr, "Client %d exited\n", thread->cl);
             return;
         }
 
-        uint32_t ident = getInt(thread->threadBuf, IDENT_SIZE);
-        uint16_t command = getInt(thread->threadBuf, IDENT_SIZE, COMMAND_SIZE);
+        // pass bytes read to server
+        server.received_data((uint8_t*)thread->threadBuf, bytesRead);
 
-        // test printout
-        printf("Received ident: %#x, with command: %#x\n", ident, command);
     }
 }
 
