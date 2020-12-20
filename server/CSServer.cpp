@@ -23,6 +23,8 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
+#include <openssl/err.h>
+
 
 
 #include "CSServer.h"
@@ -76,6 +78,14 @@ CSServer::~CSServer()
  */
 void CSServer::startup()
 {
+    int sock;
+
+    initOpenSSL();
+
+    // create and configure ssl context
+    _ctx = createContext();
+    configureContext(_ctx);
+    
     // set up port
     struct hostent *hent = gethostbyname(DEFAULT_SERVER_NAME);
     struct sockaddr_in addr;
@@ -86,7 +96,8 @@ void CSServer::startup()
     addr.sin_family = AF_INET;
 
     // create socket
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+
 
     int enable = 1;
     setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
@@ -109,7 +120,69 @@ void CSServer::startup()
             }
         }
     }
+
+    // cleanup on server close
+    close(sock);
+    SSL_CTX_free(_ctx);
+    cleanupOpenSSL();
 }
+
+/**
+ * OpenSSL initialization step
+ */
+void CSServer::initOpenSSL()
+{
+    SSL_load_error_strings();
+    OpenSSL_add_ssl_algorithms();
+}
+
+/**
+ * OpenSSL cleanup step
+ */
+void CSServer::cleanupOpenSSL()
+{
+    EVP_cleanup();
+}
+
+/**
+ * Create SSL context
+ */
+SSL_CTX* CSServer::createContext()
+{
+    const SSL_METHOD *method;
+    SSL_CTX* ctx;
+
+    method = SSLv23_server_method();
+
+    ctx = SSL_CTX_new(method);
+    if (!ctx) {
+	perror("Unable to create SSL context");
+	ERR_print_errors_fp(stderr);
+	exit(EXIT_FAILURE);
+    }
+
+    return ctx;
+}
+
+/**
+ * Configure SSL context
+ */
+void CSServer::configureContext(SSL_CTX *ctx)
+{
+    SSL_CTX_set_ecdh_auto(ctx, 1);
+
+    /* Set the key and cert */
+    if (SSL_CTX_use_certificate_file(ctx, "sslcerts/67.180.255.189.crt", SSL_FILETYPE_PEM) <= 0) {
+        ERR_print_errors_fp(stderr);
+	exit(EXIT_FAILURE);
+    }
+
+    if (SSL_CTX_use_PrivateKey_file(ctx, "sslcerts/67.180.255.189.key", SSL_FILETYPE_PEM) <= 0 ) {
+        ERR_print_errors_fp(stderr);
+	exit(EXIT_FAILURE);
+    }
+}
+
 
 
 /**
@@ -119,6 +192,7 @@ void CSServer::startup()
 void* CSServer::start(void* arg)
 {
     Thread* thread = (Thread*)arg;
+
 
     while(true) {
         if(sem_wait(&(thread->mutex)) != 0) err(2, "sem_wait on thread mutex");
@@ -144,6 +218,19 @@ void CSServer::handleClient(Thread* thread)
 
     printf("Handling client: %d\n", thread->cl);
 
+
+    // init ssl
+    thread->ssl = SSL_new(_ctx);
+    SSL_set_fd(thread->ssl, thread->cl);
+
+    if (SSL_accept(thread->ssl) <= 0) {
+        ERR_print_errors_fp(stderr);
+    }
+    else {
+        printf("SSL accepted\n");
+        //SSL_write(thread->ssl, reply, strlen(reply));
+    }
+
     // continue reading command while connected
     while(true) 
     {
@@ -160,6 +247,9 @@ void CSServer::handleClient(Thread* thread)
         printf("Received %zu bytes from client %d\n", bytesRead, thread->cl);
 
     }
+
+    SSL_shutdown(thread->ssl);
+    SSL_free(thread->ssl);
 }
 
 

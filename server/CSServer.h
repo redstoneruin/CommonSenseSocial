@@ -9,11 +9,13 @@
 #include <semaphore.h>
 #include <stdint.h>
 
+#include <openssl/ssl.h>
 
 
 typedef struct Thread {
     int cl;
     sem_t mutex;
+    SSL* ssl;
     char threadBuf[DEFAULT_BUF_SIZE];
 } Thread;
 
@@ -35,12 +37,21 @@ private:
 
     Thread* _threadPool;
 
+    // ssl context
+    SSL_CTX* _ctx;
+
 
     void* start                         (void* arg);
 
     void handleClient                   (Thread* thread);
 
     int readBytes                       (int cl, char* buf, uint16_t size);
+
+    // functions for ssl
+    void initOpenSSL                    ();
+    void cleanupOpenSSL                 ();
+    SSL_CTX* createContext              ();
+    void configureContext               (SSL_CTX* ctx);
 
 
 
