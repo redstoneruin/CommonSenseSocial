@@ -9,12 +9,17 @@
 #include <stdio.h>
 #include <getopt.h>
 
+#include <signal.h>
+
 #include "CSServer.h"
 
 
 int main(int argc, char* argv[]) {
 
     int opt;
+
+    signal(SIGPIPE, SIG_IGN);
+
     
     // use getopt
     while((opt = getopt(argc, argv, "")) != -1) {
@@ -25,9 +30,8 @@ int main(int argc, char* argv[]) {
     }
 
 
-    CSServer* server = new CSServer(DEFAULT_NUM_THREADS);
+    CSServer server(DEFAULT_NUM_THREADS);
 
-    server->startup();
+    server.startup();
 
-    delete server;
 }

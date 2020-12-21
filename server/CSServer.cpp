@@ -26,7 +26,6 @@
 #include <openssl/err.h>
 
 
-
 #include "CSServer.h"
 #include "definitions.h"
 
@@ -172,14 +171,14 @@ void CSServer::configureContext(SSL_CTX *ctx)
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
     /* Set the key and cert */
-    if (SSL_CTX_use_certificate_file(ctx, "sslcerts/67.180.255.189.crt", SSL_FILETYPE_PEM) <= 0) {
+    if (SSL_CTX_use_certificate_file(ctx, "sslcerts/certchain.pem", SSL_FILETYPE_PEM) <= 0) {
         ERR_print_errors_fp(stderr);
-	exit(EXIT_FAILURE);
+	    exit(EXIT_FAILURE);
     }
 
-    if (SSL_CTX_use_PrivateKey_file(ctx, "sslcerts/67.180.255.189.key", SSL_FILETYPE_PEM) <= 0 ) {
+    if (SSL_CTX_use_PrivateKey_file(ctx, "sslcerts/key.pem", SSL_FILETYPE_PEM) <= 0 ) {
         ERR_print_errors_fp(stderr);
-	exit(EXIT_FAILURE);
+	    exit(EXIT_FAILURE);
     }
 }
 
@@ -218,9 +217,9 @@ void CSServer::handleClient(Thread* thread)
 
     printf("Handling client: %d\n", thread->cl);
 
-
     // init ssl
     thread->ssl = SSL_new(_ctx);
+
     SSL_set_fd(thread->ssl, thread->cl);
 
     if (SSL_accept(thread->ssl) <= 0) {
@@ -234,17 +233,23 @@ void CSServer::handleClient(Thread* thread)
     // continue reading command while connected
     while(true) 
     {
-        size_t bytesRead;
+        int bytesRead;
+        printf("Attempting read\n");
         // Read from client until full tls record received
-        if((bytesRead = read(thread->cl, thread->threadBuf, DEFAULT_BUF_SIZE)) == 0)
+        if((bytesRead = SSL_read(thread->ssl, thread->threadBuf, DEFAULT_BUF_SIZE)) < 0)
         {
             fprintf(stderr, "Client %d exited\n", thread->cl);
-            return;
+            break;
         }
 
         // pass bytes read to server
         //server.received_data((uint8_t*)thread->threadBuf, bytesRead);
-        printf("Received %zu bytes from client %d\n", bytesRead, thread->cl);
+        if(bytesRead > 0) {
+            printf("Received %d bytes from client %d\n", bytesRead, thread->cl);
+            char* message = getCStr(thread->threadBuf, bytesRead);
+            printf("Message: %s\n", message);
+            free(message);
+        } 
 
     }
 

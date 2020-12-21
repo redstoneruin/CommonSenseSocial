@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
       return 1;
    }
 
-   SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
+   //SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
 
    // create ssl with context
    ssl = SSL_new(ctx);
@@ -121,13 +121,13 @@ int main(int argc, char* argv[])
    }
 
    // get server cert
-   cert = SSL_get_peer_certificate(ssl);
-   if(cert == nullptr) {
-      printf("Could not retrieve cert from server\n");
-      return 1;
-   } else {
-      printf("Received server cert\n");
-   }
+  // cert = SSL_get_peer_certificate(ssl);
+  // if(cert == nullptr) {
+  //    printf("Could not retrieve cert from server\n");
+  //    return 1;
+  // } else {
+  //    printf("Received server cert\n");
+  // }
 
 
 
@@ -145,9 +145,9 @@ int main(int argc, char* argv[])
    printf("Login test 1: ");
    printResult(loginTest1());
 
-   SSL_free(ssl);
+   if(ssl != nullptr) SSL_free(ssl);
    close(sock);
-   X509_free(cert);
+   if(cert != nullptr) X509_free(cert);
    SSL_CTX_free(ctx);
 
    return 0;
@@ -155,9 +155,14 @@ int main(int argc, char* argv[])
 
 int headerTest1()
 {
-    SSL_write(ssl, "testing", 7);
+   int written;
+   if((written = SSL_write(ssl, "testing", 7)) <= 0) {
+      return -1;
+   }
 
-    return 0;
+   printf("Wrote %d bytes: ", written);
+
+   return 0;
 }
 
 int loginTest1()
