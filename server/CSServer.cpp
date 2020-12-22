@@ -236,7 +236,7 @@ void CSServer::handleClient(Thread* thread)
         int bytesRead;
         printf("Attempting read\n");
         // Read from client until full tls record received
-        if((bytesRead = SSL_read(thread->ssl, thread->threadBuf, DEFAULT_BUF_SIZE)) < 0)
+        if((bytesRead = SSL_read(thread->ssl, thread->threadBuf, DEFAULT_BUF_SIZE)) <= 0)
         {
             fprintf(stderr, "Client %d exited\n", thread->cl);
             break;
