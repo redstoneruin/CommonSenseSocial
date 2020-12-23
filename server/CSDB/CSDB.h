@@ -38,6 +38,7 @@ typedef struct item_t {
 
 typedef struct collection_t {
     int numSubColls;
+    long long numItems;
     char* name;
     char* path;
     item_s** items;
@@ -68,6 +69,7 @@ private:
 
     void loadDB(const char* collsFilename);
     void collectionLoadHelper(FILE* file, collection_s* parent);
+    void setupCollectionManifest(collection_s* collection);
     
     void dumpCollectionsHelper(FILE* file, collection_s* parent, int depth = 0);
 
