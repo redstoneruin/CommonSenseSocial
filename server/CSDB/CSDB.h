@@ -1,10 +1,11 @@
 #pragma once
-
 /**
  * Author: Ryan Steinwert
  * 
  * Common Sense Database class definition
  */
+
+#include <stdio.h>
 
 enum PERM {
     PRIVATE,
@@ -56,16 +57,16 @@ public:
 
 
 private:
-    // vars for parsing collections file
-    int _currentCollDepth, _collIndex;
-    collection_s* _currentParent;
+    int _numBaseCollections;
 
     const char* _dbDirname;
 
     collection_s** _collections;
 
     void setup();
+
     void loadDB(const char* collsFilename);
+    void collectionLoadHelper(FILE* file, collection_s* parent);
     
-    void parseCollectionString(char* collectionString);
+    collection_s* parseCollectionString(char* collectionString, collection_s* parent);
 };

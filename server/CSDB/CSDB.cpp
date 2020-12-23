@@ -4,12 +4,12 @@
  * CSDB class implementation file
  */
 
-#include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <vector>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -31,9 +31,7 @@ CSDB::CSDB() : CSDB("db")
  * @dirname the directory containing the database
  */
 CSDB::CSDB(const char* dirname) :
-    _currentCollDepth(0),
-    _collIndex(0),
-    _currentParent(nullptr)
+    _numBaseCollections(0)
 {
     _dbDirname = dirname;
 
@@ -71,6 +69,7 @@ void CSDB::loadDB(const char* collsFilename)
 {
     int fd;
     FILE* file;
+    std::vector<collection_s*> baseCollections;
     char collNameBuf[MAX_COLLECTION_NAME_SIZE + 1];
 
     fd = open(collsFilename, O_RDWR | O_CREAT);
@@ -90,23 +89,59 @@ void CSDB::loadDB(const char* collsFilename)
     // read through file parsing by whitespace
     while(fscanf(file, "%s", collNameBuf) == 1) {
         // parse the collection using helper function
-        parseCollectionString(collNameBuf);
+        collection_s* parent = parseCollectionString(collNameBuf, nullptr);
+        collectionLoadHelper(file, parent);
+        baseCollections.push_back(parent);
     }
 
     close(fd);
+
+
+    // write the collections
+    _numBaseCollections = baseCollections.size();
+    _collections = (collection_s**) malloc (sizeof(collection_s*) * _numBaseCollections);
+    memcpy(_collections, baseCollections.data(), _numBaseCollections * sizeof(collection_s*));
+}
+
+
+/**
+ * Recursive helper function for filling collections structs
+ * @file File stream to read collections from
+ * 
+ */
+void CSDB::collectionLoadHelper(FILE* file, collection_s* parent)
+{
+    char collNameBuf[MAX_COLLECTION_NAME_SIZE + 1];
+
+    for(int i = 0; i < parent->numSubColls; i++) {
+        if(fscanf(file, "%s", collNameBuf) != 1) {
+            printf("Error loading collections, expected extra subcollection\n");
+            return;
+        }
+
+        collection_s* child = parseCollectionString(collNameBuf, parent);
+
+        // recursive call
+        collectionLoadHelper(file, child);
+
+        parent->subCollections[i] = child;
+    
+    }
 }
 
 
 /**
  * Parse a collection string
  * @collectionString C string containing name and number of subcollections to parse
+ * 
+ * @return New collections struct in heap mem containing info from string
  */
-void CSDB::parseCollectionString(char* collectionString)
+collection_s* CSDB::parseCollectionString(char* collectionString, collection_s* parent)
 {
     // find ':' to parse the number of subcollections
     int colPos, nameLen;
     collection_s* newColl = (collection_s*) malloc (sizeof(collection_s));
-    newColl->parent = nullptr;
+    newColl->parent = parent;
     newColl->path = nullptr;
     newColl->subCollections = nullptr;
     newColl->items = nullptr;
@@ -127,16 +162,13 @@ void CSDB::parseCollectionString(char* collectionString)
     strncpy(newColl->name, collectionString, colPos + 1);
 
     // set path based on parent
-    if(_currentParent == nullptr) {
-        newColl->parent = nullptr;
+    if(parent == nullptr) {
         newColl->path = (char*) malloc (sizeof(char) * (colPos + 1));
         strncpy(newColl->path, collectionString, colPos + 1);
     } else {
-        newColl->parent = _currentParent;
-        
         // create path string
-        std::string pathstring(_currentParent->path);
-        pathstring.append("/");
+        std::string pathstring(parent->path);
+        pathstring.push_back('/');
         pathstring.append(collectionString);
 
         newColl->path = (char*) malloc (sizeof(char) * (pathstring.length() + 1));
@@ -144,13 +176,18 @@ void CSDB::parseCollectionString(char* collectionString)
 
     }
 
-    printf("---Added collection---\n");
-    printf("Name: %s\n", newColl->name);
-    printf("Path: %s\n", newColl->path);
-    printf("Num subcollections: %d\n", newColl->numSubColls);
-    printf("Parent: %#x\n\n", (unsigned long long)newColl->parent);
+    // allocate space for subcolls if exist
+    if(newColl->numSubColls > 0) {
+        newColl->subCollections = (collection_s**) malloc (sizeof(collection_s*) * newColl->numSubColls);
+    }
 
+   // printf("---Added collection---\n");
+   // printf("Name: %s\n", newColl->name);
+   // printf("Path: %s\n", newColl->path);
+   // printf("Num subcollections: %d\n", newColl->numSubColls);
+   // printf("Parent: %#x\n\n", (unsigned long long)newColl->parent);
 
+    return newColl;
 
 
 }

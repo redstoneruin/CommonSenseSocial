@@ -33,3 +33,5 @@
 #define HEADER_SIZE 6
 #define IDENT_SIZE 4
 #define COMMAND_SIZE 2
+
+#define MAX_COLLECTION_NAME_SIZE 64
