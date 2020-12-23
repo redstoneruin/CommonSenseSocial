@@ -55,6 +55,7 @@ public:
     CSDB(const char* dirname);
     ~CSDB();
 
+    void dumpCollections(FILE* file);
 
 private:
     int _numBaseCollections;
@@ -68,5 +69,7 @@ private:
     void loadDB(const char* collsFilename);
     void collectionLoadHelper(FILE* file, collection_s* parent);
     
+    void dumpCollectionsHelper(FILE* file, collection_s* parent, int depth = 0);
+
     collection_s* parseCollectionString(char* collectionString, collection_s* parent);
 };

@@ -63,7 +63,7 @@ void CSDB::setup()
 
 /**
  * Load DB using collections file
- * @collsFilename Filename for collections
+ * @param collsFilename Filename for collections
  */
 void CSDB::loadDB(const char* collsFilename)
 {
@@ -106,8 +106,8 @@ void CSDB::loadDB(const char* collsFilename)
 
 /**
  * Recursive helper function for filling collections structs
- * @file File stream to read collections from
- * 
+ * @param file File stream to read collections from
+ * @param parent Current parent collection
  */
 void CSDB::collectionLoadHelper(FILE* file, collection_s* parent)
 {
@@ -132,7 +132,7 @@ void CSDB::collectionLoadHelper(FILE* file, collection_s* parent)
 
 /**
  * Parse a collection string
- * @collectionString C string containing name and number of subcollections to parse
+ * @param collectionString C string containing name and number of subcollections to parse
  * 
  * @return New collections struct in heap mem containing info from string
  */
@@ -190,4 +190,29 @@ collection_s* CSDB::parseCollectionString(char* collectionString, collection_s* 
     return newColl;
 
 
+}
+
+
+/**
+ * Dumps the collection structure to the given file
+ * @param file File to dump collection list
+ */
+void CSDB::dumpCollections(FILE* file)
+{
+    for(int i = 0; i < _numBaseCollections; i++) {
+        dumpCollectionsHelper(file, _collections[i]);
+    }
+}
+
+void CSDB::dumpCollectionsHelper(FILE* file, collection_s* parent, int depth)
+{
+    for(int i = 0; i < depth; i++) {
+        fprintf(file, "\t");
+    }
+
+    fprintf(file, "%s: %d children\n", parent->name, parent->numSubColls);
+
+    for(int i = 0; i < parent->numSubColls; i++) {
+        dumpCollectionsHelper(file, parent->subCollections[i], depth+1);
+    }
 }

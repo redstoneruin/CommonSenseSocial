@@ -11,5 +11,6 @@ CSDB db;
 int main()
 {
     printf("Beginning CSDB tests\n");
+    db.dumpCollections(stdout);
     return 0;
 }
