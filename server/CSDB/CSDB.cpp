@@ -21,6 +21,9 @@
 #define COLLECTIONS_CHILDREN_SIZE 4
 #define COLLECTIONS_ITEMS_SIZE 8
 
+#define COLLECTIONS_FILENAME "collections"
+#define FORMATTED_COLLECTIONS_FILENAME "formattedCollections"
+
 /**
  * CSDB constructor
  */
@@ -56,10 +59,22 @@ void CSDB::setup()
     mkdir(_dbDirname, S_IRWXU);
 
     std::string collFilename(_dbDirname);
-    collFilename.append("/collections");
+    std::string formattedCollFilename(_dbDirname);
+    collFilename.push_back('/');
+    formattedCollFilename.push_back('/');
+    collFilename.append(COLLECTIONS_FILENAME);
+    formattedCollFilename.append(FORMATTED_COLLECTIONS_FILENAME);;
 
-
-    loadDB(collFilename.c_str());
+    // attempt to load formatted collections first
+    if(loadDB(formattedCollFilename.c_str()) == 0) {
+        // formatted collection file found
+    } else if(loadDB(collFilename.c_str(), O_CREAT) == 0) {
+        // plain collection file found, do formatting
+        createFormattedCollectionsFile(formattedCollFilename.c_str());
+    } else {
+        fprintf(stderr, "Error: Could not find or create collections file\n");
+        exit(1);
+    }
 }
 
 
@@ -67,25 +82,25 @@ void CSDB::setup()
  * Load DB using collections file
  * @param collsFilename Filename for collections
  */
-void CSDB::loadDB(const char* collsFilename)
+int CSDB::loadDB(const char* collsFilename, unsigned int extraFlags)
 {
     int fd;
     FILE* file;
     std::vector<collection_s*> baseCollections;
     char collNameBuf[MAX_COLLECTION_NAME_SIZE + COLLECTIONS_CHILDREN_SIZE + 2];
 
-    fd = open(collsFilename, O_RDWR | O_CREAT);
-    
+    fd = open(collsFilename, O_RDWR | extraFlags);
+
+    // should return without error, without message if file not found 
     if(fd == -1) {
-        fprintf(stderr, "Could not open collections file\n");
-        return;
+        return -1;
     }
 
     // open file in read only mode
     file = fdopen(fd, "r");
     if(file == nullptr) {
         fprintf(stderr, "Could not open collections file stream\n");
-        return;
+        return -1;
     }
 
     // read through file parsing by whitespace
@@ -106,8 +121,46 @@ void CSDB::loadDB(const char* collsFilename)
     _numBaseCollections = baseCollections.size();
     _collections = (collection_s**) malloc (sizeof(collection_s*) * _numBaseCollections);
     memcpy(_collections, baseCollections.data(), _numBaseCollections * sizeof(collection_s*));
+
+
+    return 0;
 }
 
+/**
+ * Create formatted collections file
+ * @param formattedCollFilename Filename for formatted collection file
+ */
+void CSDB::createFormattedCollectionsFile(const char* formattedCollFilename)
+{
+    FILE* file;
+    printf("Creating formatted collections file\n");
+    if((file = fopen(formattedCollFilename, "w+")) == nullptr) {
+        fprintf(stderr, "Could not create formatted collection file\n");
+        return;
+    }
+
+    for(int i = 0; i < _numBaseCollections; i++) {
+        formattedCollectionsHelper(file, _collections[i]);
+    }
+
+    fclose(file);
+}
+
+
+/**
+ * Recursive helper for writing collections to formatted file
+ * @param file File stream to write to, must b open
+ * @param parent Parent collection
+ */
+void CSDB::formattedCollectionsHelper(FILE* file, collection_s* parent)
+{
+    // print parent
+    fprintf(file, "%s:%d ", parent->name, parent->numSubColls);
+
+    for(int i = 0; i < parent->numSubColls; i++) {
+        formattedCollectionsHelper(file, parent->subCollections[i]);
+    }
+}
 
 /**
  * Recursive helper function for filling collections structs
@@ -123,7 +176,7 @@ void CSDB::collectionLoadHelper(FILE* file, collection_s* parent)
     for(int i = 0; i < parent->numSubColls; i++) {
         if(fscanf(file, "%s", collNameBuf) != 1) {
             printf("Error loading collections, expected extra subcollection\n");
-            return;
+            exit(1);
         }
 
         collection_s* child = parseCollectionString(collNameBuf, parent);

@@ -67,9 +67,12 @@ private:
 
     void setup();
 
-    void loadDB(const char* collsFilename);
+    int loadDB(const char* collsFilename, unsigned int extraFlags = 0);
     void collectionLoadHelper(FILE* file, collection_s* parent);
     void setupCollectionManifest(collection_s* collection);
+
+    void createFormattedCollectionsFile(const char* formattedCollFilename);
+    void formattedCollectionsHelper(FILE* file, collection_s* parent);
     
     void dumpCollectionsHelper(FILE* file, collection_s* parent, int depth = 0);
 
