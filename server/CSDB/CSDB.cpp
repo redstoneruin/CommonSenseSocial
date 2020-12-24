@@ -227,8 +227,19 @@ int CSDB::deleteCollection(const char* path)
                 // remove collection from list
                 collection_s** collections = (collection_s**) malloc (sizeof(collection_s*) * (_numBaseCollections -1));
                 // copy still valid colls
-                memcpy(collections, _collections, i);
-                memcpy(collections+i, _collections+i+1,_numBaseCollections-i-1);
+                for(int j = 0; j < _numBaseCollections; j++) 
+                {
+                    if(j == i) continue;
+
+                    if(j > i) {
+                        collections[j-1] = _collections[j];
+                    } else {
+                        collections[j] = _collections[j];
+                    }
+                }
+
+                //memcpy(collections, _collections, i);
+                //memcpy(collections+i, _collections+i+1,_numBaseCollections-i-1);
                 free(_collections);
                 _collections = collections;
                 _numBaseCollections--;
@@ -243,8 +254,18 @@ int CSDB::deleteCollection(const char* path)
         {
             if(parent->subCollections[i] == toDelete) {
                 collection_s** subCollections = (collection_s**) malloc (sizeof(collection_s*) * (parent->numSubColls-1));
-                memcpy(subCollections, parent->subCollections, i);
-                memcpy(subCollections+i, parent->subCollections+i+1,parent->numSubColls-i-1);
+                
+                for(int j = 0; j < parent->numSubColls; j++)
+                {
+                    if(j==i) continue;
+                    if(j > i) {
+                        subCollections[j-1] = parent->subCollections[j]; 
+                    } else {
+                        subCollections[j] = parent->subCollections[j];
+                    }
+                }
+                //memcpy(subCollections, parent->subCollections, i);
+                //memcpy(subCollections+i, parent->subCollections+i+1,parent->numSubColls-i-1);
                 free(parent->subCollections);
                 parent->subCollections = subCollections;
                 parent->numSubColls--;
@@ -259,10 +280,6 @@ int CSDB::deleteCollection(const char* path)
     formattedCollFilename.push_back('/');
     formattedCollFilename.append(FORMATTED_COLLECTIONS_FILENAME);
 
-
-    printf("\n----------------\n");
-    dumpCollections(stdout);
-    printf("----------------\n\n");
     // rewrite collections file
     createFormattedCollectionsFile(formattedCollFilename.c_str());
 

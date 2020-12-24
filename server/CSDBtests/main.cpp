@@ -30,7 +30,7 @@ int main()
     printf("Deletion tests: ");
     printResult(stdout, deletionTests());
 
-    printf("---- Dumping collection structure---\n");
+    printf("\n---- Dumping collection structure---\n");
     db.dumpCollections(stdout);
 
     return 0;
@@ -62,8 +62,9 @@ int existanceTests() {
 
 int deletionTests() {
     if(db.deleteCollection("test1/test4/test5") != 0) return -1;
-    if(db.deleteCollection("test2") != 0) return -2;
-    if(db.deleteCollection("test7") == 0) return -3;
+    if(db.deleteCollection("test1/test4") != 0) return -2;
+    if(db.deleteCollection("test2") != 0) return -3;
+    if(db.deleteCollection("test7") == 0) return -4;
     return 0;
 }
 
