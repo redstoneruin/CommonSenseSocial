@@ -206,6 +206,93 @@ int CSDB::addCollection(const char* path)
     return 0;
 }
 
+
+/**
+ * Delete the collection at the given path
+ * @param path Path of collections to delete
+ * @return 0 if deleted successfully, error code if not
+ */
+int CSDB::deleteCollection(const char* path)
+{
+    collection_s* toDelete = getCollection(path);
+
+    if(toDelete == nullptr) return -1;
+
+    // delete from parent list
+    if(toDelete->parent == nullptr) {
+        // find position in base collections
+        for(int i = 0; i < _numBaseCollections; i++) 
+        {
+            if(_collections[i] == toDelete) {
+                // remove collection from list
+                collection_s** collections = (collection_s**) malloc (sizeof(collection_s*) * (_numBaseCollections -1));
+                // copy still valid colls
+                memcpy(collections, _collections, i);
+                memcpy(collections+i, _collections+i+1,_numBaseCollections-i-1);
+                free(_collections);
+                _collections = collections;
+                _numBaseCollections--;
+                break;
+            }
+        }
+    } else {
+        // remove from parent's child collections
+        collection_s* parent = toDelete->parent;
+
+        for(int i = 0; i < parent->numSubColls; i++)
+        {
+            if(parent->subCollections[i] == toDelete) {
+                collection_s** subCollections = (collection_s**) malloc (sizeof(collection_s*) * (parent->numSubColls-1));
+                memcpy(subCollections, parent->subCollections, i);
+                memcpy(subCollections+i, parent->subCollections+i+1,parent->numSubColls-i-1);
+                free(parent->subCollections);
+                parent->subCollections = subCollections;
+                parent->numSubColls--;
+                break;
+            }
+        }
+    }
+
+    deleteCollectionHelper(toDelete);
+
+    std::string formattedCollFilename(_dbDirname);
+    formattedCollFilename.push_back('/');
+    formattedCollFilename.append(FORMATTED_COLLECTIONS_FILENAME);
+
+
+    printf("\n----------------\n");
+    dumpCollections(stdout);
+    printf("----------------\n\n");
+    // rewrite collections file
+    createFormattedCollectionsFile(formattedCollFilename.c_str());
+
+    return 0;
+}
+
+/**
+ * Recursive helper for deleting collection
+ * @param toDelete Collection to delete
+ */
+void CSDB::deleteCollectionHelper(collection_s* toDelete)
+{
+    // recursively delete children   
+    for(int i = 0; i < toDelete->numSubColls; i++) 
+    {
+        deleteCollectionHelper(toDelete->subCollections[i]);
+    }
+
+    // delete items
+    for(int i = 0; i < toDelete->numItems; i++)
+    {
+        // TODO: free item info stored in struct
+        free(toDelete->items[i]);
+    }
+
+    if(toDelete->items != nullptr) free(toDelete->items);
+
+    free(toDelete);
+}
+
 /**
  * Create formatted collections file
  * @param formattedCollFilename Filename for formatted collection file

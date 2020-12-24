@@ -11,6 +11,7 @@ CSDB db;
 
 int additionTests();
 int existanceTests();
+int deletionTests();
 
 void printResult(FILE* file, int result);
 
@@ -25,6 +26,12 @@ int main()
     
     printf("Existance tests: ");
     printResult(stdout, existanceTests());
+
+    printf("Deletion tests: ");
+    printResult(stdout, deletionTests());
+
+    printf("---- Dumping collection structure---\n");
+    db.dumpCollections(stdout);
 
     return 0;
 }
@@ -50,6 +57,13 @@ int existanceTests() {
     if(!db.collectionExists("test1/test4/test5")) return -2;
     if(db.collectionExists("test6")) return -3;
 
+    return 0;
+}
+
+int deletionTests() {
+    if(db.deleteCollection("test1/test4/test5") != 0) return -1;
+    if(db.deleteCollection("test2") != 0) return -2;
+    if(db.deleteCollection("test7") == 0) return -3;
     return 0;
 }
 

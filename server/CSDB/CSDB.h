@@ -57,6 +57,7 @@ public:
     ~CSDB();
 
     int addCollection(const char* path);
+    int deleteCollection(const char* path);
 
     bool collectionExists(const char* path);
 
@@ -83,6 +84,7 @@ private:
     void dumpCollectionsHelper(FILE* file, collection_s* parent, int depth = 0);
     void formattedCollectionsHelper(FILE* file, collection_s* parent);
     void collectionLoadHelper(FILE* file, collection_s* parent);
+    void deleteCollectionHelper(collection_s* toDelete);
 
     collection_s* parseCollectionString(const char* collectionString, collection_s* parent);
 };
