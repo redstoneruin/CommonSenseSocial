@@ -127,6 +127,14 @@ int CSDB::loadDB(const char* collsFilename, unsigned int extraFlags)
 }
 
 /**
+ * Add a collection with the given path to the collection structure
+ */
+bool CSDB::addCollection(const char* path)
+{
+    return false;
+}
+
+/**
  * Create formatted collections file
  * @param formattedCollFilename Filename for formatted collection file
  */
@@ -340,7 +348,7 @@ collection_s* CSDB::getCollection(const char* path)
     ret = nullptr;
     
     // first break path into pieces
-    nextSep = lastSep = 0;
+    nextSep = lastSep = -1;
     while((nextSep = pathstring.find('/', lastSep + 1)) != std::string::npos) 
     {
         int nameLen = nextSep - lastSep - 1;
@@ -361,12 +369,7 @@ collection_s* CSDB::getCollection(const char* path)
     name[nameLen] = 0;
     collectionNames.push_back(name);
 
-    // pop the first name, which is the db name
-    free(collectionNames.front());
-    collectionNames.erase(collectionNames.begin());
-
     pathDepth = collectionNames.size();
-
 
     // attempt to find the collection
     for(int i = 0; i < _numBaseCollections; i++) 

@@ -56,6 +56,8 @@ public:
     CSDB(const char* dirname);
     ~CSDB();
 
+    bool addCollection(const char* path);
+
     bool collectionExists(const char* path);
 
     void dumpCollections(FILE* file);

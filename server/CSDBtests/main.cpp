@@ -26,9 +26,9 @@ int main()
 
 
 int existanceTests() {
-    if(!db.collectionExists("db/test1/test3")) return -1;
-    if(!db.collectionExists("db/test1/test4/test5")) return -2;
-    if(db.collectionExists("db/test6")) return -3;
+    if(!db.collectionExists("test1/test3")) return -1;
+    if(!db.collectionExists("test1/test4/test5")) return -2;
+    if(db.collectionExists("test6")) return -3;
 
     return 0;
 }
