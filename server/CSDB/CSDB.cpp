@@ -138,6 +138,9 @@ int CSDB::addCollection(const char* path)
     std::string pathstring(path);
     std::string formattedCollFilename(_dbDirname);
 
+    // check if collection already exists
+    if(collectionExists(path)) return 0;
+
     formattedCollFilename.push_back('/');
     formattedCollFilename.append(FORMATTED_COLLECTIONS_FILENAME);
 
