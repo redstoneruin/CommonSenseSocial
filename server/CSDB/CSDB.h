@@ -56,7 +56,7 @@ public:
     CSDB(const char* dirname);
     ~CSDB();
 
-    bool addCollection(const char* path);
+    int addCollection(const char* path);
 
     bool collectionExists(const char* path);
 
@@ -84,5 +84,5 @@ private:
     void formattedCollectionsHelper(FILE* file, collection_s* parent);
     void collectionLoadHelper(FILE* file, collection_s* parent);
 
-    collection_s* parseCollectionString(char* collectionString, collection_s* parent);
+    collection_s* parseCollectionString(const char* collectionString, collection_s* parent);
 };

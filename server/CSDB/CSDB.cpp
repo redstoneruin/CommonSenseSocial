@@ -128,10 +128,82 @@ int CSDB::loadDB(const char* collsFilename, unsigned int extraFlags)
 
 /**
  * Add a collection with the given path to the collection structure
+ * @param path Path for new collection
+ * @return 0 if successful, error code if not
  */
-bool CSDB::addCollection(const char* path)
+int CSDB::addCollection(const char* path)
 {
-    return false;
+
+    size_t lastSepIndex;
+    std::string pathstring(path);
+    std::string formattedCollFilename(_dbDirname);
+
+    formattedCollFilename.push_back('/');
+    formattedCollFilename.append(FORMATTED_COLLECTIONS_FILENAME);
+
+    lastSepIndex = pathstring.find_last_of('/');
+
+
+    if(lastSepIndex == std::string::npos) {
+        // add new base collection
+        collection_s* newColl = parseCollectionString(pathstring.append(":0").c_str(), nullptr);
+
+        collection_s** newCollections = (collection_s**) malloc (sizeof(collection_s*) * _numBaseCollections + 1);
+
+        // copy over base collections
+        for(int i = 0; i < _numBaseCollections; i++)
+        {
+            newCollections[i] = _collections[i];
+        }
+
+        newCollections[_numBaseCollections] = newColl;
+
+        if(_collections != nullptr) free(_collections);
+        _collections = newCollections;
+        _numBaseCollections++;
+
+        createFormattedCollectionsFile(formattedCollFilename.c_str());
+
+        return 0;
+
+    }
+    
+    std::string parentPath = pathstring.substr(0, lastSepIndex);
+    std::string name = pathstring.substr(lastSepIndex + 1);
+    std::string collstring = pathstring.substr(lastSepIndex + 1);
+    collstring.append(":0");
+
+
+    collection_s* parent = getCollection(parentPath.c_str());
+
+    // ensure parent exists
+    if(parent == nullptr) return -2;
+
+    // look for child already existing
+    for(int i = 0; i < parent->numSubColls; i++) {
+        collection_s* child = parent->subCollections[i];
+        // if name found, can return without failure
+        if(strcmp(child->name, name.c_str()) == 0) return 0;
+    }
+
+
+    collection_s* child = parseCollectionString(collstring.c_str(), parent);
+
+    // create new subcollection array and copy over old one
+    collection_s** subCollections = (collection_s**) malloc (sizeof(collection_s*) * (parent->numSubColls + 1));
+    memcpy(subCollections, parent->subCollections, sizeof(collection_s*) * parent->numSubColls);
+    
+    // add new child
+    subCollections[parent->numSubColls] = child;
+
+    // free the old subcollection list and replace
+    free(parent->subCollections);
+    parent->subCollections = subCollections;
+    parent->numSubColls++;
+
+    createFormattedCollectionsFile(formattedCollFilename.c_str());
+
+    return 0;
 }
 
 /**
@@ -141,7 +213,6 @@ bool CSDB::addCollection(const char* path)
 void CSDB::createFormattedCollectionsFile(const char* formattedCollFilename)
 {
     FILE* file;
-    printf("Creating formatted collections file\n");
     if((file = fopen(formattedCollFilename, "w+")) == nullptr) {
         fprintf(stderr, "Could not create formatted collection file\n");
         return;
@@ -201,15 +272,16 @@ void CSDB::collectionLoadHelper(FILE* file, collection_s* parent)
 /**
  * Parse a collection string
  * @param collectionString C string containing name and number of subcollections to parse
- * 
+ * @param parent Parent collection, can be null
  * @return New collections struct in heap mem containing info from string
  */
-collection_s* CSDB::parseCollectionString(char* collectionString, collection_s* parent)
+collection_s* CSDB::parseCollectionString(const char* collectionString, collection_s* parent)
 {
     // find ':' to parse the number of subcollections
     int colPos, nameLen;
     collection_s* newColl = (collection_s*) malloc (sizeof(collection_s));
     newColl->parent = parent;
+    newColl->numItems = 0;
     newColl->path = nullptr;
     newColl->subCollections = nullptr;
     newColl->items = nullptr;
@@ -218,11 +290,10 @@ collection_s* CSDB::parseCollectionString(char* collectionString, collection_s* 
     for(int i = 0; i < nameLen; i++) {
         if(collectionString[i] == ':') {
             colPos = i;
-            collectionString[i] = (char)0;
         }
     }
 
-    char* numSubCollsString = collectionString + colPos + 1;
+    const char* numSubCollsString = collectionString + colPos + 1;
 
     // fill collection struct
     newColl->numSubColls = atoi(numSubCollsString);
@@ -374,10 +445,15 @@ collection_s* CSDB::getCollection(const char* path)
     // attempt to find the collection
     for(int i = 0; i < _numBaseCollections; i++) 
     {
-        nextParent = lastParent = _collections[i];
+        nextParent = _collections[i];
 
         // match base collection name
-        if(strcmp(lastParent->name, collectionNames[0]) != 0) continue;
+        if(strcmp(nextParent->name, collectionNames[0]) != 0) {
+            continue;
+        } else if(pathDepth == 1) {
+            ret = nextParent;
+            break;
+        }
 
         for(int j = 1; j < pathDepth; j++) 
         {

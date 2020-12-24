@@ -13,6 +13,8 @@ LINK = clang++ -fstack-protector -m64 -o
 
 COPYCOMMON = cp ../../common/* ..
 
+DEFAULTDBFOLDER = db
+
 
 
 all : $(TARGET)
@@ -30,3 +32,6 @@ spotless : clean
 
 clean :
 	rm -f $(OBJECTS) $(DEPS)
+
+removedb:
+	rm -rf $(DEFAULTDBFOLDER)
