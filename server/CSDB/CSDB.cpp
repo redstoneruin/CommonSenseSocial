@@ -314,6 +314,106 @@ void CSDB::setupCollectionManifest(collection_s* collection)
 
 
 /**
+ * Return whether this collection exists or not
+ * @param path Path string for the collection
+ * @return True if the collection exists, false if does not
+ */
+bool CSDB::collectionExists(const char* path)
+{
+    return getCollection(path) != nullptr;
+}
+
+
+/**
+ * Find the collection with the given path, returns null if does not exist
+ * @param path Path string for the collection
+ * @return The collection for the given path, null if DNE
+ */
+collection_s* CSDB::getCollection(const char* path)
+{
+    int pathDepth;
+    std::string pathstring(path);
+    size_t nextSep, lastSep;
+    std::vector<char*> collectionNames;
+    collection_s *nextParent, *lastParent, *ret;
+
+    ret = nullptr;
+    
+    // first break path into pieces
+    nextSep = lastSep = 0;
+    while((nextSep = pathstring.find('/', lastSep + 1)) != std::string::npos) 
+    {
+        int nameLen = nextSep - lastSep - 1;
+        char* name = (char*) malloc (sizeof(char) * (nameLen + 1));
+
+        memcpy(name, path + lastSep + 1, nameLen);
+        name[nameLen] = 0;
+
+        collectionNames.push_back(name);
+        
+        lastSep = nextSep;
+    }
+
+    // get the last 
+    int nameLen = strlen(path + lastSep + 1);
+    char* name = (char*) malloc (sizeof(char) * (nameLen + 1));
+    memcpy(name, path + lastSep + 1, nameLen);
+    name[nameLen] = 0;
+    collectionNames.push_back(name);
+
+    // pop the first name, which is the db name
+    free(collectionNames.front());
+    collectionNames.erase(collectionNames.begin());
+
+    pathDepth = collectionNames.size();
+
+
+    // attempt to find the collection
+    for(int i = 0; i < _numBaseCollections; i++) 
+    {
+        nextParent = lastParent = _collections[i];
+
+        // match base collection name
+        if(strcmp(lastParent->name, collectionNames[0]) != 0) continue;
+
+        for(int j = 1; j < pathDepth; j++) 
+        {
+            lastParent = nextParent;
+            // check each child, update
+            for(int k = 0; k < nextParent->numSubColls; k++)
+            {
+                collection_s* child = lastParent->subCollections[k];
+                if(strcmp(child->name, collectionNames[j]) == 0) {
+                    // found next collection
+                    nextParent = child;
+                    break;
+                }
+            }
+
+            if(lastParent == nextParent) {
+                // not found under this parent
+                break;
+            } else if(j == pathDepth-1) {
+                // matching child found at the max depth, must be result
+                ret = nextParent;
+                break;
+            }
+        }
+        if(ret != nullptr) break;
+    }
+
+    // cleanup
+    for(int i = 0; i < pathDepth; i++) {
+        free(collectionNames[i]);
+    }
+
+    return ret;
+
+}
+
+
+
+/**
  * Dumps the collection structure to the given file
  * @param file File to dump collection list
  */

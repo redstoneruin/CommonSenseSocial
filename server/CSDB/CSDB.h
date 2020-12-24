@@ -56,6 +56,8 @@ public:
     CSDB(const char* dirname);
     ~CSDB();
 
+    bool collectionExists(const char* path);
+
     void dumpCollections(FILE* file);
 
 private:
@@ -67,14 +69,18 @@ private:
 
     void setup();
 
+    // setup functions
     int loadDB(const char* collsFilename, unsigned int extraFlags = 0);
-    void collectionLoadHelper(FILE* file, collection_s* parent);
     void setupCollectionManifest(collection_s* collection);
-
     void createFormattedCollectionsFile(const char* formattedCollFilename);
-    void formattedCollectionsHelper(FILE* file, collection_s* parent);
     
+    // collection retrieval
+    collection_s* getCollection(const char* path);
+
+    // recursive helpers
     void dumpCollectionsHelper(FILE* file, collection_s* parent, int depth = 0);
+    void formattedCollectionsHelper(FILE* file, collection_s* parent);
+    void collectionLoadHelper(FILE* file, collection_s* parent);
 
     collection_s* parseCollectionString(char* collectionString, collection_s* parent);
 };
