@@ -332,6 +332,57 @@ void CSDB::createFormattedCollectionsFile(const char* formattedCollFilename)
     fclose(file);
 }
 
+/**
+ * Add an item with the given path to the collection
+ * @param path Path of the new item
+ * @param text Test to store in this item
+ * @return 0 if successful, error code if not
+ */
+int CSDB::addItem(const char* path, const char* text)
+{
+
+    item_s* item = getNewItemStruct(path);
+
+    if(item == nullptr) {
+        return -1;
+    }
+
+    return 0;
+
+}
+
+
+/**
+ * Get and fill a new item struct with the given path
+ * @param path The path of the item
+ * @return 0 if successful, error code if not
+ */
+item_s* CSDB::getNewItemStruct(const char* path)
+{
+    std::string pathstring(path);
+    size_t lastSep = pathstring.find_last_of('/');
+    if(lastSep == std::string::npos) {
+        return nullptr;
+    }
+
+    collection_s* collection = getCollection(pathstring.substr(0, lastSep).c_str());
+
+    if(collection == nullptr) return nullptr;
+
+    // create the new item struct
+    
+}
+
+
+/**
+ * Write an item to the file structure
+ * @param item The item to write
+ * @return 0 if successful, error code if not
+ */
+int CSDB::writeItem(item_s* item) {
+    return 0;
+}
+
 
 /**
  * Recursive helper for writing collections to formatted file

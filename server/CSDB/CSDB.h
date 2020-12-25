@@ -14,6 +14,7 @@ enum PERM {
 };
 
 enum DTYPE {
+    NONE,
     TEXT,
     IMAGE,
     AUDIO,
@@ -27,15 +28,6 @@ union ItemData {
     char* location;
 };
 
-typedef struct item_t {
-    char* name;
-    char* owner;
-    PERM perms;
-    DTYPE type;
-    bool loaded;
-    union ItemData data;
-} item_s;
-
 typedef struct collection_t {
     int numSubColls;
     long long numItems;
@@ -46,6 +38,15 @@ typedef struct collection_t {
     collection_t* parent;
 } collection_s;
 
+typedef struct item_t {
+    char* name;
+    char* owner;
+    PERM perms;
+    DTYPE type;
+    bool loaded;
+    collection_s* collection;
+    union ItemData data;
+} item_s;
 
 /**
  * Main database type, provides top level DB control
@@ -58,6 +59,8 @@ public:
 
     int addCollection(const char* path);
     int deleteCollection(const char* path);
+
+    int addItem(const char* path, const char* text);
 
     bool collectionExists(const char* path);
 
@@ -79,6 +82,10 @@ private:
     
     // collection retrieval
     collection_s* getCollection(const char* path);
+
+    // item helpers
+    item_s* getNewItemStruct(const char* path);
+    int writeItem(item_s* item);
 
     // recursive helpers
     void dumpCollectionsHelper(FILE* file, collection_s* parent, int depth = 0);
