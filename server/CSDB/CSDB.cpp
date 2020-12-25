@@ -347,6 +347,7 @@ int CSDB::addItem(const char* path, const char* text)
         return -1;
     }
 
+
     return 0;
 
 }
@@ -370,6 +371,12 @@ item_s* CSDB::getNewItemStruct(const char* path)
     if(collection == nullptr) return nullptr;
 
     // create the new item struct
+    item_s* item = (item_s*) malloc (sizeof(item_s));
+
+    std::string namestring = pathstring.substr(lastSep+1);
+
+    return item;
+
     
 }
 

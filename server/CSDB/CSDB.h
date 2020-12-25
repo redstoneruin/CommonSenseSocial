@@ -28,6 +28,16 @@ union ItemData {
     char* location;
 };
 
+typedef struct item_t {
+    char* name;
+    char* owner;
+    PERM perms;
+    DTYPE type;
+    bool loaded;
+    void* collection;
+    union ItemData data;
+} item_s;
+
 typedef struct collection_t {
     int numSubColls;
     long long numItems;
@@ -38,15 +48,6 @@ typedef struct collection_t {
     collection_t* parent;
 } collection_s;
 
-typedef struct item_t {
-    char* name;
-    char* owner;
-    PERM perms;
-    DTYPE type;
-    bool loaded;
-    collection_s* collection;
-    union ItemData data;
-} item_s;
 
 /**
  * Main database type, provides top level DB control
