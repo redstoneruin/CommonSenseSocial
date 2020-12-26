@@ -241,8 +241,6 @@ int CSDB::deleteCollection(const char* path)
                     }
                 }
 
-                //memcpy(collections, _collections, i);
-                //memcpy(collections+i, _collections+i+1,_numBaseCollections-i-1);
                 free(_collections);
                 _collections = collections;
                 _numBaseCollections--;
@@ -267,8 +265,6 @@ int CSDB::deleteCollection(const char* path)
                         subCollections[j] = parent->subCollections[j];
                     }
                 }
-                //memcpy(subCollections, parent->subCollections, i);
-                //memcpy(subCollections+i, parent->subCollections+i+1,parent->numSubColls-i-1);
                 free(parent->subCollections);
                 parent->subCollections = subCollections;
                 parent->numSubColls--;
@@ -338,18 +334,63 @@ void CSDB::createFormattedCollectionsFile(const char* formattedCollFilename)
  * @param text Test to store in this item
  * @return 0 if successful, error code if not
  */
-int CSDB::addItem(const char* path, const char* text)
+int CSDB::addItem(const char* path, const char* text, const char* owner, PERM perm)
 {
+    size_t textLen;
+    item_s* item;
+    
+    textLen = strlen(text);
 
-    item_s* item = getNewItemStruct(path);
+    item = getNewItemStruct(path, owner, perm);
 
     if(item == nullptr) {
         return -1;
     }
 
+    // set type and copy over test
+    item->type = DTYPE::TEXT;
+    item->data.text = (char*) malloc (sizeof(char) * (textLen + 1));
+    
+    strncpy(item->data.text, text, textLen + 1);
+
+
+    addItemToParent(item);
 
     return 0;
 
+}
+
+/**
+ * Adds the given item to the list of its parent, if not there already
+ */
+int CSDB::addItemToParent(item_s* item)
+{
+    collection_s* parent = (collection_s*)item->collection;
+
+    if(parent == nullptr) return -1;
+
+
+    // check if already in list
+    for(int i = 0; i < parent->numItems; i++) 
+    {
+        if(parent->items[i] == item) return 0;
+    }
+
+    // add to list
+    item_s** oldlist = parent->items;
+    item_s** newlist = (item_s**) malloc (sizeof(item_s*) * (parent->numItems + 1));
+    
+    for(int i = 0; i < parent->numItems; i++) 
+    {
+        newlist[i] = oldlist[i];
+    }
+
+    if(oldlist != nullptr) free(oldlist);
+
+    parent->items = newlist;
+
+
+    return 0;
 }
 
 
@@ -358,26 +399,48 @@ int CSDB::addItem(const char* path, const char* text)
  * @param path The path of the item
  * @return 0 if successful, error code if not
  */
-item_s* CSDB::getNewItemStruct(const char* path)
+item_s* CSDB::getNewItemStruct(const char* path, const char* owner, PERM perm)
 {
     std::string pathstring(path);
-    size_t lastSep = pathstring.find_last_of('/');
+    std::string namestring;
+    collection_s* collection;
+    item_s* item;
+    size_t lastSep;
+
+    lastSep = pathstring.find_last_of('/');
     if(lastSep == std::string::npos) {
         return nullptr;
     }
 
-    collection_s* collection = getCollection(pathstring.substr(0, lastSep).c_str());
+    collection = getCollection(pathstring.substr(0, lastSep).c_str());
 
     if(collection == nullptr) return nullptr;
 
     // create the new item struct
-    item_s* item = (item_s*) malloc (sizeof(item_s));
+    item = (item_s*) malloc (sizeof(item_s));
 
-    std::string namestring = pathstring.substr(lastSep+1);
+    namestring = pathstring.substr(lastSep+1);
+
+    // copy over name    
+    item->name = (char*) malloc (sizeof(char) * (namestring.size()+1));
+    strncpy(item->name, namestring.c_str(), namestring.size()+1);
+
+    item->owner = nullptr;
+
+    // copy over owner if exists    
+    if(owner != nullptr) {
+        int ownerLen = strlen(owner);
+        item->owner = (char*) malloc (sizeof(char) * (ownerLen + 1));
+        strncpy(item->owner, owner, ownerLen+1);
+    }
+
+    item->perm = perm;
+
+    item->loaded = false;
+
+    item->collection = collection;
 
     return item;
-
-    
 }
 
 

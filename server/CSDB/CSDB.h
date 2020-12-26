@@ -31,7 +31,7 @@ union ItemData {
 typedef struct item_t {
     char* name;
     char* owner;
-    PERM perms;
+    PERM perm;
     DTYPE type;
     bool loaded;
     void* collection;
@@ -61,7 +61,7 @@ public:
     int addCollection(const char* path);
     int deleteCollection(const char* path);
 
-    int addItem(const char* path, const char* text);
+    int addItem(const char* path, const char* text, const char* owner = nullptr, PERM perm = PERM::PRIVATE);
 
     bool collectionExists(const char* path);
 
@@ -85,7 +85,8 @@ private:
     collection_s* getCollection(const char* path);
 
     // item helpers
-    item_s* getNewItemStruct(const char* path);
+    item_s* getNewItemStruct(const char* path, const char* owner, PERM perm);
+    int addItemToParent(item_s* item);
     int writeItem(item_s* item);
 
     // recursive helpers
