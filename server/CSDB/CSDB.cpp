@@ -33,7 +33,7 @@ CSDB::CSDB() : CSDB("db")
 
 /**
  * Create db with the given filename
- * @dirname the directory containing the database
+ * @param dirname the directory containing the database
  */
 CSDB::CSDB(const char* dirname) :
     _numBaseCollections(0)
@@ -167,6 +167,8 @@ int CSDB::addCollection(const char* path)
 
         createFormattedCollectionsFile(formattedCollFilename.c_str());
 
+        setupCollectionManifest(newColl);
+
         return 0;
 
     }
@@ -205,6 +207,8 @@ int CSDB::addCollection(const char* path)
     parent->numSubColls++;
 
     createFormattedCollectionsFile(formattedCollFilename.c_str());
+
+    setupCollectionManifest(child);
 
     return 0;
 }
@@ -298,7 +302,7 @@ void CSDB::deleteCollectionHelper(collection_s* toDelete)
     }
 
     // delete items
-    for(int i = 0; i < toDelete->numItems; i++)
+    for(unsigned long long i = 0; i < toDelete->numItems; i++)
     {
         // TODO: free item info stored in struct
         free(toDelete->items[i]);
@@ -354,7 +358,10 @@ int CSDB::addItem(const char* path, const char* text, const char* owner, PERM pe
     strncpy(item->data.text, text, textLen + 1);
 
 
-    addItemToParent(item);
+    if(addItemToParent(item) != 0) return -2;
+
+
+    if(writeItem(item) != 0) return -3;
 
     return 0;
 
@@ -372,7 +379,7 @@ int CSDB::addItemToParent(item_s* item)
 
 
     // check if already in list
-    for(int i = 0; i < parent->numItems; i++) 
+    for(unsigned long long i = 0; i < parent->numItems; i++) 
     {
         if(parent->items[i] == item) return 0;
     }
@@ -381,14 +388,16 @@ int CSDB::addItemToParent(item_s* item)
     item_s** oldlist = parent->items;
     item_s** newlist = (item_s**) malloc (sizeof(item_s*) * (parent->numItems + 1));
     
-    for(int i = 0; i < parent->numItems; i++) 
+    for(unsigned long long i = 0; i < parent->numItems; i++) 
     {
         newlist[i] = oldlist[i];
     }
+    newlist[parent->numItems] = item;
 
     if(oldlist != nullptr) free(oldlist);
 
     parent->items = newlist;
+    parent->numItems++;
 
 
     return 0;
@@ -452,10 +461,46 @@ item_s* CSDB::getNewItemStruct(const char* path, const char* owner, PERM perm)
  * @param item The item to write
  * @return 0 if successful, error code if not
  */
-int CSDB::writeItem(item_s* item) {
+int CSDB::writeItem(item_s* item) 
+{
+    // update manifest first
+    if(updateManifest((collection_s*)item->collection) != 0) return -1;
+
+
     return 0;
 }
 
+
+/**
+ * Update the manifest for the current collection based on the items
+ * @param collection The collection to update
+ */
+int CSDB::updateManifest(collection_s* collection)
+{
+    FILE* manFile;
+    
+    if(collection == nullptr) return -1;
+
+    std::string manifestPathString(collection->path);
+    manifestPathString.push_back('/');
+    manifestPathString.append("Manifest");
+
+    manFile = fopen(manifestPathString.c_str(), "w");
+
+    if(manFile == nullptr) return -2;
+
+    fprintf(manFile, "%s:%llu", "size", collection->numItems);
+
+    // print info for each item
+    for(unsigned long long i = 0; i < collection->numItems; i++) 
+    {
+        item_s* item = collection->items[i];
+
+        fprintf(manFile, " %s:%s:%d:%d", item->name, item->owner == nullptr ? "" : item->owner, item->perm, item->type);
+    }
+
+    return 0;
+}
 
 /**
  * Recursive helper for writing collections to formatted file
@@ -467,7 +512,8 @@ void CSDB::formattedCollectionsHelper(FILE* file, collection_s* parent)
     // print parent
     fprintf(file, "%s:%d ", parent->name, parent->numSubColls);
 
-    for(int i = 0; i < parent->numSubColls; i++) {
+    for(int i = 0; i < parent->numSubColls; i++) 
+    {
         formattedCollectionsHelper(file, parent->subCollections[i]);
     }
 }
@@ -538,12 +584,12 @@ collection_s* CSDB::parseCollectionString(const char* collectionString, collecti
     if(parent == nullptr) {
         pathstring.append(_dbDirname);
         pathstring.push_back('/');
-        pathstring.append(collectionString);
+        pathstring.append(newColl->name);
     } else {
         // create path string
         pathstring.append(parent->path);
         pathstring.push_back('/');
-        pathstring.append(collectionString);
+        pathstring.append(newColl->name);
     }
 
     // set path string
@@ -619,6 +665,8 @@ void CSDB::setupCollectionManifest(collection_s* collection)
 
     // set num items to whats in the manifest
     collection->numItems = atoll(buf + colonIndex + 1);
+
+    // TODO: add items to collection
 
 }
 

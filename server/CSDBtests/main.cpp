@@ -75,8 +75,9 @@ int deletionTests() {
 }
 
 int itemAdditionTests() {
-    if(db.addItem("test1/test5/item1", "A basic text item") != 0) return -1;
-    if(db.addItem("test3/item2", "A second basic text item") != 0) return -2;
+    int ret;
+    if((ret = db.addItem("test1/test5/item1", "A basic text item")) != 0) return ret;
+    if((ret = db.addItem("test3/item2", "A second basic text item")) != 0) return ret;
     return 0;
 }
 

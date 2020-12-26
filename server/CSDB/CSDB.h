@@ -40,7 +40,7 @@ typedef struct item_t {
 
 typedef struct collection_t {
     int numSubColls;
-    long long numItems;
+    unsigned long long numItems;
     char* name;
     char* path;
     item_s** items;
@@ -88,6 +88,7 @@ private:
     item_s* getNewItemStruct(const char* path, const char* owner, PERM perm);
     int addItemToParent(item_s* item);
     int writeItem(item_s* item);
+    int updateManifest(collection_s* collection);
 
     // recursive helpers
     void dumpCollectionsHelper(FILE* file, collection_s* parent, int depth = 0);
