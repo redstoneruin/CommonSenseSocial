@@ -414,7 +414,10 @@ item_s* CSDB::getNewItemStruct(const char* path, const char* owner, PERM perm)
 
     collection = getCollection(pathstring.substr(0, lastSep).c_str());
 
-    if(collection == nullptr) return nullptr;
+    if(collection == nullptr) {
+        printf("could not find collection with path: %s\n", pathstring.substr(0, lastSep).c_str());
+        return nullptr;
+    }
 
     // create the new item struct
     item = (item_s*) malloc (sizeof(item_s));
