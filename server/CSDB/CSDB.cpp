@@ -362,6 +362,7 @@ int CSDB::addItem(const char* path, const char* text, const char* owner, PERM pe
 
 /**
  * Adds the given item to the list of its parent, if not there already
+ * @param item Item to add to its parent collection
  */
 int CSDB::addItemToParent(item_s* item)
 {
@@ -415,7 +416,6 @@ item_s* CSDB::getNewItemStruct(const char* path, const char* owner, PERM perm)
     collection = getCollection(pathstring.substr(0, lastSep).c_str());
 
     if(collection == nullptr) {
-        printf("could not find collection with path: %s\n", pathstring.substr(0, lastSep).c_str());
         return nullptr;
     }
 
