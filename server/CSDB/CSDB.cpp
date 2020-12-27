@@ -478,6 +478,8 @@ int CSDB::deleteItem(const char* path)
     return 0;
 }
 
+
+
 /**
  * Adds the given item to the list of its parent, if not there already
  * @param item Item to add to its parent collection
@@ -587,9 +589,31 @@ item_s* CSDB::getNewItemStruct(const char* path, const char* owner, PERM perm)
  */
 int CSDB::writeItem(item_s* item) 
 {
+    FILE* file;
+
     // update manifest first
     if(updateManifest((collection_s*)item->collection) != 0) return -1;
 
+    collection_s* collection = (collection_s*)item->collection;
+
+    if(collection == nullptr) return -2;
+
+    // get the path for the item
+    std::string itemPath(collection->path);
+    itemPath.push_back('/');
+    itemPath.append(item->name);
+
+    // write to a file
+    file = fopen(itemPath.c_str(), "w+");
+
+    if(file == nullptr) return -3;
+
+    // determine how to write file based on type
+    if(item->type == DTYPE::TEXT) {
+        fprintf(file, "%s", item->data.text);
+    }
+
+    fclose(file);
 
     return 0;
 }
