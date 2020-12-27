@@ -666,7 +666,73 @@ void CSDB::setupCollectionManifest(collection_s* collection)
     // set num items to whats in the manifest
     collection->numItems = atoll(buf + colonIndex + 1);
 
+    collection->items = (item_s**) malloc (sizeof(item_s*) * collection->numItems);
+
+
     // TODO: add items to collection
+    for(unsigned long long i = 0; i < collection->numItems; i++)
+    {
+        if(fscanf(file, "%s", buf) < 1) {
+            // not enough items
+            fprintf(stderr, "Error: Not enough items in manifest at path: %s\n", manifestName.c_str());
+            exit(1);
+        }
+
+        // parse the buffer
+        item_s* item = (item_s*) malloc (sizeof(item_s));
+        fscanf(file, "%s", buf);
+
+        item->loaded = false;
+        item->collection = collection;
+
+        // break buf into seperate strings at seperators
+        for(unsigned long j = 0; j < sizeof(buf); j++) 
+        {
+            if(buf[j] == ':') {
+                buf[j] = 0;
+            } else if (buf[j] == 0) {
+                break;
+            }
+        }
+
+        int len, startIndex;
+
+        len = strlen(buf);
+
+        item->name = (char*) malloc (sizeof(char) * (len + 1));
+        strncpy(item->name, buf, len);
+        item->name[len] = 0;
+
+        printf("Found name: %s\n", item->name);
+
+        startIndex = len + 1;
+
+        len = strlen(buf + startIndex);
+
+        if(len == 0) {
+            item->owner = nullptr;
+        } else {
+            item->owner = (char*) malloc (sizeof(char) * (len + 1));
+            strncpy(item->owner, buf + startIndex, len);
+            item->owner[len] = 0;
+        }
+        printf("Found owner: %s\n", item->owner);
+
+        startIndex += len + 1;
+
+        len = strlen(buf + startIndex);
+        item->perm = (PERM)atoi(buf + startIndex);
+
+        printf("Found perms: %d\n", item->perm);
+
+        startIndex += len + 1;
+
+        item->type = (DTYPE)atoi(buf + startIndex);
+        printf("Found type: %d\n", item->type);
+
+        collection->items[i] = item;
+
+    }
 
 }
 
