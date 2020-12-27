@@ -40,6 +40,12 @@ int main()
     printf("Item existance tests: ");
     printResult(stdout, itemExistanceTests());
 
+    printf("Item deletion tests: ");
+    printResult(stdout, itemDeletionTests());
+
+    printf("Item existance tests 2: ");
+    printResult(stdout, itemExistanceTests2());
+
     printf("\n---- Dumping collection structure---\n");
     db.dumpCollections(stdout);
 

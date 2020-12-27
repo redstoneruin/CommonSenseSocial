@@ -466,12 +466,14 @@ int CSDB::deleteItem(const char* path)
     }
 
     collection->items = newList;
+    collection->numItems--;
 
     // free memory
     free(oldList);
     free(item->name);
     if(item->owner != nullptr) free(item->owner);
     free(item);
+
 
     return 0;
 }
