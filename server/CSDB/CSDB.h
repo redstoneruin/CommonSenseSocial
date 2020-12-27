@@ -62,6 +62,7 @@ public:
     int deleteCollection(const char* path);
 
     int replaceItem(const char* path, const char* text, const char* owner = nullptr, PERM perm = PERM::PRIVATE);
+    int deleteItem(const char* path);
 
     bool collectionExists(const char* path);
     bool itemExists(const char* path);

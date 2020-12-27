@@ -14,6 +14,8 @@ int existanceTests();
 int deletionTests();
 int itemAdditionTests();
 int itemExistanceTests();
+int itemDeletionTests();
+int itemExistanceTests2();
 
 void printResult(FILE* file, int result);
 
@@ -84,7 +86,9 @@ int itemAdditionTests()
 {
     int ret;
     if((ret = db.replaceItem("test1/test5/item1", "A basic text item")) != 0) return ret;
-    if((ret = db.replaceItem("test3/item2", "A second basic text item")) != 0) return ret;
+    if((ret = db.replaceItem("test1/item1", "A basic text item")) != 0) return ret;
+    if((ret = db.replaceItem("test1/item2", "A basic text item")) != 0) return ret;
+    if((ret = db.replaceItem("test3/item2", "A basic text item")) != 0) return ret;
     return 0;
 }
 
@@ -92,13 +96,31 @@ int itemAdditionTests()
 int itemExistanceTests()
 {
     if(!db.itemExists("test1/test5/item1")) return -1;
-    if(!db.itemExists("test3/item2")) return -2;
+    if(!db.itemExists("test1/item1")) return -2;
+    if(!db.itemExists("test1/item2")) return -3;
+    if(!db.itemExists("test3/item2")) return -4;
 
-    if(db.itemExists("test3/item10")) return -3;
+    if(db.itemExists("test3/item10")) return -5;
 
     return 0;
 }
 
+int itemDeletionTests()
+{
+    int ret;
+    if((ret = db.deleteItem("test1/test5/item1")) != 0) return ret;
+    if((ret = db.deleteItem("test1/item1")) != 0) return ret;
+
+    return 0;
+}
+
+int itemExistanceTests2()
+{
+    if(db.itemExists("test1/test5/item1")) return -1;
+    if(db.itemExists("test1/item1")) return -2;
+
+    return 0;
+}
 
 void printResult(FILE* file, int result) 
 {

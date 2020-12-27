@@ -422,6 +422,60 @@ int CSDB::replaceItem(const char* path, const char* text, const char* owner, PER
 
 }
 
+
+/**
+ * Delete the item at the given path
+ * @param path The path of the item
+ * @return 0 if successfully deleted, error code if not
+ */
+int CSDB::deleteItem(const char* path)
+{
+    item_s* item = getItem(path);
+
+    if(item == nullptr) return -1;
+
+    collection_s* collection = (collection_s*)item->collection;
+
+    if(collection == nullptr) return -2;
+
+    unsigned long long itemIndex;
+
+    item_s** oldList = collection->items;
+    item_s** newList = (item_s**) malloc (sizeof(item_s*) * (collection->numItems - 1));
+
+    for(unsigned long long i = 0; i < collection->numItems; i++)
+    {
+        item_s* currentItem = collection->items[i];
+        if(strcmp(currentItem->name, item->name) == 0)
+        {
+            itemIndex = i;
+            break;
+        }
+    }
+
+    // fill new list
+    for(unsigned long long i = 0; i < collection->numItems; i++)
+    {
+        if(i == itemIndex) {
+            continue;
+        } else if(i > itemIndex) {
+            newList[i-1] = oldList[i];
+        } else {
+            newList[i] = oldList[i];
+        }
+    }
+
+    collection->items = newList;
+
+    // free memory
+    free(oldList);
+    free(item->name);
+    if(item->owner != nullptr) free(item->owner);
+    free(item);
+
+    return 0;
+}
+
 /**
  * Adds the given item to the list of its parent, if not there already
  * @param item Item to add to its parent collection
