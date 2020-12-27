@@ -61,9 +61,10 @@ public:
     int addCollection(const char* path);
     int deleteCollection(const char* path);
 
-    int addItem(const char* path, const char* text, const char* owner = nullptr, PERM perm = PERM::PRIVATE);
+    int replaceItem(const char* path, const char* text, const char* owner = nullptr, PERM perm = PERM::PRIVATE);
 
     bool collectionExists(const char* path);
+    bool itemExists(const char* path);
 
     void dumpCollections(FILE* file);
 
@@ -85,6 +86,9 @@ private:
     collection_s* getCollection(const char* path);
 
     // item helpers
+    item_s* getItem(const char* path);
+    item_s* getItemFromCollection(collection_s* collection, const char* name);
+
     item_s* getNewItemStruct(const char* path, const char* owner, PERM perm);
     int addItemToParent(item_s* item);
     int writeItem(item_s* item);

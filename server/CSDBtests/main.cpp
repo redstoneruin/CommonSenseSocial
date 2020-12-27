@@ -13,6 +13,7 @@ int additionTests();
 int existanceTests();
 int deletionTests();
 int itemAdditionTests();
+int itemExistanceTests();
 
 void printResult(FILE* file, int result);
 
@@ -33,6 +34,9 @@ int main()
 
     printf("Item addition tests: ");
     printResult(stdout, itemAdditionTests());
+
+    printf("Item existance tests: ");
+    printResult(stdout, itemExistanceTests());
 
     printf("\n---- Dumping collection structure---\n");
     db.dumpCollections(stdout);
@@ -58,7 +62,8 @@ int additionTests() {
     return 0;
 }
 
-int existanceTests() {
+int existanceTests() 
+{
     if(!db.collectionExists("test1/test3")) return -1;
     if(!db.collectionExists("test1/test4/test5")) return -2;
     if(db.collectionExists("test6")) return -3;
@@ -66,7 +71,8 @@ int existanceTests() {
     return 0;
 }
 
-int deletionTests() {
+int deletionTests() 
+{
     if(db.deleteCollection("test1/test4/test5") != 0) return -1;
     if(db.deleteCollection("test1/test4") != 0) return -2;
     if(db.deleteCollection("test2") != 0) return -3;
@@ -74,15 +80,28 @@ int deletionTests() {
     return 0;
 }
 
-int itemAdditionTests() {
+int itemAdditionTests() 
+{
     int ret;
-    if((ret = db.addItem("test1/test5/item1", "A basic text item")) != 0) return ret;
-    if((ret = db.addItem("test3/item2", "A second basic text item")) != 0) return ret;
+    if((ret = db.replaceItem("test1/test5/item1", "A basic text item")) != 0) return ret;
+    if((ret = db.replaceItem("test3/item2", "A second basic text item")) != 0) return ret;
     return 0;
 }
 
 
-void printResult(FILE* file, int result) {
+int itemExistanceTests()
+{
+    if(!db.itemExists("test1/test5/item1")) return -1;
+    if(!db.itemExists("test3/item2")) return -2;
+
+    if(db.itemExists("test3/item10")) return -3;
+
+    return 0;
+}
+
+
+void printResult(FILE* file, int result) 
+{
     if(result == 0) {
         fprintf(file, "success\n");
         return;

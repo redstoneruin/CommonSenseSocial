@@ -332,13 +332,68 @@ void CSDB::createFormattedCollectionsFile(const char* formattedCollFilename)
     fclose(file);
 }
 
+
+/**
+ * Get item struct from the given path
+ * @param path The path of the item
+ * @return The pointer to the item if exists, null if does not
+ */
+item_s* CSDB::getItem(const char* path)
+{
+    size_t sepIndex;
+    collection_s* collection;
+    std::string pathString(path);
+
+    sepIndex = pathString.find_last_of('/');
+
+    std::string nameString = pathString.substr(sepIndex + 1);
+    std::string collPathString = pathString.substr(0, sepIndex);
+
+    // first find the collection
+    collection = getCollection(collPathString.c_str());
+
+    if(collection == nullptr) return nullptr;
+
+
+    return getItemFromCollection(collection, nameString.c_str());
+}
+
+/**
+ * Get an item from the given collection
+ * @param collection The collection to search
+ * @
+ */
+item_s* CSDB::getItemFromCollection(collection_s* collection, const char* name)
+{
+    for(unsigned long long i = 0; i < collection->numItems; i++)
+    {
+        item_s* item = collection->items[i];
+
+        if(strcmp(item->name, name) == 0) return item;
+    }
+
+    return nullptr;
+}
+
+/**
+ * Check if the item at a given path exists
+ * @param path Path of the item
+ * @return True if exists, false if does not
+ */
+bool CSDB::itemExists(const char* path)
+{
+    if(getItem(path) != nullptr) return true;
+
+    return false;
+}
+
 /**
  * Add an item with the given path to the collection
  * @param path Path of the new item
  * @param text Test to store in this item
  * @return 0 if successful, error code if not
  */
-int CSDB::addItem(const char* path, const char* text, const char* owner, PERM perm)
+int CSDB::replaceItem(const char* path, const char* text, const char* owner, PERM perm)
 {
     size_t textLen;
     item_s* item;
@@ -378,10 +433,23 @@ int CSDB::addItemToParent(item_s* item)
     if(parent == nullptr) return -1;
 
 
+    std::string itemPath(parent->path);
+    itemPath.push_back('/');
+    itemPath.append(item->name);
+
+
     // check if already in list
     for(unsigned long long i = 0; i < parent->numItems; i++) 
     {
-        if(parent->items[i] == item) return 0;
+        item_s* currentItem = parent->items[i];
+        if(currentItem == item) {
+            return 0;
+        } else if (strcmp(currentItem->name, item->name) == 0) {
+            parent->items[i] = item;
+            free(currentItem);
+            return 0;
+        }
+
     }
 
     // add to list
@@ -703,8 +771,6 @@ void CSDB::setupCollectionManifest(collection_s* collection)
         strncpy(item->name, buf, len);
         item->name[len] = 0;
 
-        printf("Found name: %s\n", item->name);
-
         startIndex = len + 1;
 
         len = strlen(buf + startIndex);
@@ -716,19 +782,15 @@ void CSDB::setupCollectionManifest(collection_s* collection)
             strncpy(item->owner, buf + startIndex, len);
             item->owner[len] = 0;
         }
-        printf("Found owner: %s\n", item->owner);
 
         startIndex += len + 1;
 
         len = strlen(buf + startIndex);
         item->perm = (PERM)atoi(buf + startIndex);
 
-        printf("Found perms: %d\n", item->perm);
-
         startIndex += len + 1;
 
         item->type = (DTYPE)atoi(buf + startIndex);
-        printf("Found type: %d\n", item->type);
 
         collection->items[i] = item;
 
