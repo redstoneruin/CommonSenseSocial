@@ -468,11 +468,14 @@ int CSDB::deleteItem(const char* path)
     collection->items = newList;
     collection->numItems--;
 
+
     // free memory
     free(oldList);
     free(item->name);
     if(item->owner != nullptr) free(item->owner);
     free(item);
+
+    updateManifest(collection);
 
 
     return 0;
@@ -578,6 +581,9 @@ item_s* CSDB::getNewItemStruct(const char* path, const char* owner, PERM perm)
 
     item->collection = collection;
 
+    item->createdTime = time(nullptr);
+    item->modifiedTime = time(nullptr);
+
     return item;
 }
 
@@ -625,7 +631,7 @@ int CSDB::writeItem(item_s* item)
  */
 int CSDB::updateManifest(collection_s* collection)
 {
-    FILE* manFile;
+    int manFile;
     
     if(collection == nullptr) return -1;
 
@@ -633,19 +639,26 @@ int CSDB::updateManifest(collection_s* collection)
     manifestPathString.push_back('/');
     manifestPathString.append("Manifest");
 
-    manFile = fopen(manifestPathString.c_str(), "w");
+    manFile = open(manifestPathString.c_str(), O_WRONLY | O_TRUNC);
 
-    if(manFile == nullptr) return -2;
+    if(manFile < 0) return -2;
 
-    fprintf(manFile, "%s:%llu", "size", collection->numItems);
+    dprintf(manFile, "size:%llu", collection->numItems);
 
     // print info for each item
     for(unsigned long long i = 0; i < collection->numItems; i++) 
     {
         item_s* item = collection->items[i];
 
-        fprintf(manFile, " %s:%s:%d:%d", item->name, item->owner == nullptr ? "" : item->owner, item->perm, item->type);
+        dprintf(manFile, " %s:%s:%d:%d:%ld:%ld",  item->name, 
+                                                    item->owner == nullptr ? "" : item->owner, 
+                                                    item->perm, 
+                                                    item->type,
+                                                    item->createdTime,
+                                                    item->modifiedTime);
     }
+
+    close(manFile);
 
     return 0;
 }
@@ -823,8 +836,10 @@ void CSDB::setupCollectionManifest(collection_s* collection)
         if(fscanf(file, "%s", buf) < 1) {
             // not enough items
             fprintf(stderr, "Error: Not enough items in manifest at path: %s\n", manifestName.c_str());
+            fprintf(stderr, "Expected %llu items, got %llu\n", collection->numItems, i);
             exit(1);
         }
+
 
         // parse the buffer
         item_s* item = (item_s*) malloc (sizeof(item_s));
@@ -870,11 +885,24 @@ void CSDB::setupCollectionManifest(collection_s* collection)
 
         startIndex += len + 1;
 
+        len = strlen(buf + startIndex);
         item->type = (DTYPE)atoi(buf + startIndex);
+
+        startIndex += len + 1;
+
+        len = strlen(buf + startIndex);
+        item->createdTime = atol(buf + startIndex);
+
+        startIndex += len + 1;
+
+        item->modifiedTime = atol(buf + startIndex);
 
         collection->items[i] = item;
 
     }
+
+    fclose(file);
+    close(fd);
 
 }
 

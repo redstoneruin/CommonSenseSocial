@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <time.h>
 
 enum PERM {
     PRIVATE,
@@ -33,6 +34,8 @@ typedef struct item_t {
     char* owner;
     PERM perm;
     DTYPE type;
+    time_t createdTime;
+    time_t modifiedTime;
     bool loaded;
     void* collection;
     union ItemData data;
