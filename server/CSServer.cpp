@@ -33,7 +33,7 @@
 /**
  * Constructor for Common Sense Social server, starts main 
  * server loop.
- * numThreads - Number of threads in the thread pool
+ * @param numThreads Number of threads in the thread pool
  */
 CSServer::CSServer(int numThreads) :
     _numThreads(numThreads), 
@@ -145,6 +145,7 @@ void CSServer::cleanupOpenSSL()
 
 /**
  * Create SSL context
+ * @return A new SSL context
  */
 SSL_CTX* CSServer::createContext()
 {
@@ -165,6 +166,7 @@ SSL_CTX* CSServer::createContext()
 
 /**
  * Configure SSL context
+ * @param ctx Pointer to SSL context to configure
  */
 void CSServer::configureContext(SSL_CTX *ctx)
 {
@@ -186,7 +188,7 @@ void CSServer::configureContext(SSL_CTX *ctx)
 
 /**
  * Function for starting thread, waits on semaphore before client is accepted
- * arg - Thread struct argument expected
+ * @param arg Thread struct argument expected
  */
 void* CSServer::start(void* arg)
 {
@@ -210,7 +212,7 @@ void* CSServer::start(void* arg)
 
 /**
  * Handle client, called from worker thread when new client available
- * thread - thread responsible for handling this client
+ * @param thread thread responsible for handling this client
  */
 void CSServer::handleClient(Thread* thread)
 {
@@ -258,10 +260,13 @@ void CSServer::handleClient(Thread* thread)
 }
 
 
-/* *
- * Read the specified number of bytes from the buffer client descriptor
+/**
+ * Read the specified number of bytes from the buffer client descriptor 
  * up to the given maximum size
- * cl - client file descriptor for 
+ * @param cl Client file descriptor
+ * @param buf Buffer to read bytes into
+ * @param size Max size to read into buffer
+ * @return The number of bytes read to the given buffer
  */
 int CSServer::readBytes(int cl, char* buf, uint16_t size)
 {
@@ -281,8 +286,9 @@ int CSServer::readBytes(int cl, char* buf, uint16_t size)
 
 /**
  * Returns new c string in heap from source buffer, starting at index 0 and with given size
- * src - source buffer to read string from
- * size - size of string
+ * @param src Source buffer to read string from
+ * @param size Size of string
+ * @return A new string in the heap with the given size
  */
 char* CSServer::getCStr(const char* src, uint16_t size)
 {
@@ -291,9 +297,10 @@ char* CSServer::getCStr(const char* src, uint16_t size)
 
 /**
  * Returns a new c string stored in heap, with given start index and size from source buffer
- * src - source buffer to read string from
- * start - start index of string
- * size - size of string
+ * @param src Source buffer to read string from
+ * @param start Start index of string
+ * @param size Size of string
+ * @return A new string in the heap with the given size
  */
 char* CSServer::getCStr(const char* src, uint16_t start, uint16_t size)
 {
@@ -308,8 +315,9 @@ char* CSServer::getCStr(const char* src, uint16_t start, uint16_t size)
 
 /**
  * Returns the parsed integer from a source buffer starting at index 0
- * src - buffer to read int from
- * size - size of int in bytes
+ * @param src Buffer to read int from
+ * @param size Size of int in bytes
+ * @return The parsed int
  */
 uint64_t CSServer::getInt(const char* src, uint16_t size)
 {
@@ -319,9 +327,10 @@ uint64_t CSServer::getInt(const char* src, uint16_t size)
 
 /**
  * Returns the parsed integer from a given place in a source buffer
- * src - buffer to read int from
- * start - start index of int
- * size - size of int in bytes
+ * @param src Buffer to read int from
+ * @param start Start index of int
+ * @param size Size of int in bytes
+ * @return The parsed int
  */
 uint64_t CSServer::getInt(const char* src, uint16_t start, uint16_t size)
 {
