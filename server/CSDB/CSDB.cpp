@@ -422,41 +422,75 @@ bool CSDB::itemExists(const char* path)
  * @param type Pointer to item type, filled with the type of the returned item data
  * @param bufSize The maximum size to write to the buffer
  * @param offset The offset to open the file with
- * @return The number of bytes written to the return buffer if succeeded, error code less than 0 if failed
+ * @return The number of bytes written
  */
-int CSDB::getItemData(const char* path, void* returnBuffer, DTYPE* type, int bufSize, long offset)
+size_t CSDB::getItemData(const char* path, void* returnBuffer, DTYPE* type, size_t bufSize, size_t offset)
 {
-    long ret;
     item_s* item;
-    collection_s* parent;
+    char* buf = (char*)returnBuffer;
 
     // get the item
     item = getItem(path);
 
-    if(item == nullptr) return -1;
+    if(item == nullptr) return 0;
 
-    parent = (collection_s*)item->collection;
+    // load item into memory
+    if(loadItem(item) != 0) return 0;
+
+    if(offset >= item->dataSize) return 0;
+
+    size_t i;
+    for(i = offset; i < item->dataSize && (i-offset) < bufSize; i++) 
+    {
+        buf[i-offset] = item->data[i];
+    }
+
+    *type = item->type;
+
+    return offset-i;
+}
+
+
+/**
+ * Load item data from file structure into memory
+ * @param item Item to load
+ * @return 0 if successful, error code if not
+ */
+int CSDB::loadItem(item_s* item)
+{
+    int fd;
+    size_t ret;
+    char* data;
+    collection_s* parent = (collection_s*)item->collection;
+
+    if(item == nullptr) return 0;
+
+    if(item->loaded && item->data != nullptr) free(item->data);
 
     std::string pathString(parent->path);
     pathString.push_back('/');
     pathString.append(item->name);
 
-    int fd = open(pathString.c_str(), O_RDONLY);
+    fd = open(pathString.c_str(), O_RDONLY);
+    if(fd < 0) return -1;
 
-    if(fd < 0) return -2;
+    data = (char*) malloc (sizeof(char) * item->dataSize);
 
-    // seek to the offset
-    long offsetFound = lseek(fd, offset, SEEK_SET);
+    if(item->type == DTYPE::TEXT) {
+        ret = read(fd, data, item->dataSize-1);
+        
+        if(ret != item->dataSize-1) {
+            free(data);
+            return -2;
+        }
 
-    if(offsetFound != offset) return -3;
+        data[item->dataSize-1] = 0;
+        item->data = data;
+    }
 
-    // read bytes to the buffer
-    ret = read(fd, returnBuffer, bufSize);
-    
-    if(ret < 0) return -4;
+    item->loaded = true;
 
-    *type = item->type;
-    return ret;
+    return 0; 
 }
 
 
@@ -481,10 +515,11 @@ int CSDB::replaceItem(const char* path, const char* text, const char* owner, PER
 
     // set type and copy over test
     item->type = DTYPE::TEXT;
-    item->data.text = (char*) malloc (sizeof(char) * (textLen + 1));
+    item->data = (char*) malloc (sizeof(char) * (textLen + 1));
     
-    strncpy(item->data.text, text, textLen + 1);
+    strncpy(item->data, text, textLen + 1);
 
+    item->dataSize = textLen + 1;
 
     if(addItemToParent(item) != 0) return -2;
 
@@ -659,6 +694,8 @@ item_s* CSDB::getNewItemStruct(const char* path, const char* owner, PERM perm)
     item->perm = perm;
 
     item->loaded = false;
+    item->dataSize = 0;
+    item->data = nullptr;
 
     item->collection = collection;
 
@@ -697,7 +734,7 @@ int CSDB::writeItem(item_s* item)
 
     // determine how to write file based on type
     if(item->type == DTYPE::TEXT) {
-        fprintf(file, "%s", item->data.text);
+        fprintf(file, "%s", item->data);
     }
 
     fclose(file);

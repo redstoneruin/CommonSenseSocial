@@ -39,7 +39,8 @@ typedef struct item_t {
     time_t modifiedTime;
     bool loaded;
     void* collection;
-    union ItemData data;
+    size_t dataSize;
+    char* data;
 } item_s;
 
 typedef struct collection_t {
@@ -68,7 +69,7 @@ public:
     int replaceItem(const char* path, const char* text, const char* owner = nullptr, PERM perm = PERM::PRIVATE);
     int deleteItem(const char* path);
 
-    int getItemData(const char* path, void* returnBuffer, DTYPE* type, int bufSize, long offset = 0);
+    size_t getItemData(const char* path, void* returnBuffer, DTYPE* type, size_t bufSize, size_t offset = 0);
 
     bool collectionExists(const char* path);
     bool itemExists(const char* path);
@@ -100,6 +101,8 @@ private:
     int addItemToParent(item_s* item);
     int writeItem(item_s* item);
     int updateManifest(collection_s* collection);
+
+    int loadItem(item_s* item);
 
     // recursive helpers
     void dumpCollectionsHelper(FILE* file, collection_s* parent, int depth = 0);

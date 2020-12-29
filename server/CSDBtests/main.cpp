@@ -50,7 +50,7 @@ int main()
     printf("Item existance tests 2: ");
     printResult(stdout, itemExistanceTests2());
 
-    printf("Text item retrieval tests:");
+    printf("Text item retrieval tests: ");
     printResult(stdout, textItemRetrievalTests());
 
     printf("\n---- Dumping collection structure---\n");
@@ -137,16 +137,14 @@ int itemExistanceTests2()
 
 int textItemRetrievalTests()
 {
-    int ret;
+    size_t ret;
     DTYPE type;
     char buf[BUF_SIZE];
 
-    if((ret = db.getItemData("test1/item2", buf, &type, BUF_SIZE)) < 0) return ret;
-    buf[ret] = 0;
+    if((ret = db.getItemData("test1/item2", buf, &type, BUF_SIZE)) == 0) return -1;
     if(strcmp("A basic text item", buf) != 0) return -10;
     
-    if((ret = db.getItemData("test3/item2", buf, &type, BUF_SIZE)) < 0) return ret;
-    buf[ret] = 0;
+    if((ret = db.getItemData("test3/item2", buf, &type, BUF_SIZE)) == 0) return -2;
     if(strcmp("A basic text item", buf) != 0) return -11;
 
     return 0;
