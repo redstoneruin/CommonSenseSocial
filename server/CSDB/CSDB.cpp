@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <string>
 #include <vector>
 
@@ -23,6 +24,8 @@
 
 #define COLLECTIONS_FILENAME "collections"
 #define FORMATTED_COLLECTIONS_FILENAME "formattedCollections"
+
+
 
 /**
  * CSDB constructor
@@ -310,7 +313,31 @@ void CSDB::deleteCollectionHelper(collection_s* toDelete)
 
     if(toDelete->items != nullptr) free(toDelete->items);
 
+
+    // delete the directory in the filesystem
+    nftw64(toDelete->path, ftwHelper, 50, FTW_DEPTH);
+
     free(toDelete);
+}
+
+
+/**
+ * Helper function for ftw
+ * @param path The path of the object to handle
+ * @param statStruct The stat struct for the given object
+ * @param info Extra info defined by ftw functions
+ * @param ftw The ftw struct
+ * @return Returns 0, undefined behavior
+ */
+int CSDB::ftwHelper(const char* path, const struct stat64*, int info, struct FTW*)
+{
+    if(info == FTW_DP) {
+        // remove empty directory
+        rmdir(path);
+    } else if(info == FTW_F) {
+        remove(path);
+    }
+    return 0;
 }
 
 /**

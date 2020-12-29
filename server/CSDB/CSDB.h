@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <ftw.h>
 #include <time.h>
 
 enum PERM {
@@ -103,6 +104,8 @@ private:
     void formattedCollectionsHelper(FILE* file, collection_s* parent);
     void collectionLoadHelper(FILE* file, collection_s* parent);
     void deleteCollectionHelper(collection_s* toDelete);
+
+    static int ftwHelper(const char* path, const struct stat64* statStruct, int info, struct FTW* ftw);
 
     collection_s* parseCollectionString(const char* collectionString, collection_s* parent);
 };
