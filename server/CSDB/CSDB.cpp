@@ -469,6 +469,14 @@ int CSDB::deleteItem(const char* path)
     collection->numItems--;
 
 
+    // delete file
+    std::string filePathString(_dbDirname);
+    filePathString.push_back('/');
+    filePathString.append(path);
+
+    // not checking if succeeds or not
+    remove(filePathString.c_str());
+
     // free memory
     free(oldList);
     free(item->name);
