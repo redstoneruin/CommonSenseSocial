@@ -2,7 +2,10 @@
  * Test suite for CSDB
  */
 
+#define BUF_SIZE 2048
+
 #include <stdio.h>
+#include <string.h>
 
 #include "../CSDB/CSDB.h"
 
@@ -16,6 +19,7 @@ int itemAdditionTests();
 int itemExistanceTests();
 int itemDeletionTests();
 int itemExistanceTests2();
+int textItemRetrievalTests();
 
 void printResult(FILE* file, int result);
 
@@ -45,6 +49,9 @@ int main()
 
     printf("Item existance tests 2: ");
     printResult(stdout, itemExistanceTests2());
+
+    printf("Text item retrieval tests:");
+    printResult(stdout, textItemRetrievalTests());
 
     printf("\n---- Dumping collection structure---\n");
     db.dumpCollections(stdout);
@@ -124,6 +131,23 @@ int itemExistanceTests2()
 {
     if(db.itemExists("test1/test5/item1")) return -1;
     if(db.itemExists("test1/item1")) return -2;
+
+    return 0;
+}
+
+int textItemRetrievalTests()
+{
+    int ret;
+    DTYPE type;
+    char buf[BUF_SIZE];
+
+    if((ret = db.getItemData("test1/item2", buf, &type, BUF_SIZE)) < 0) return ret;
+    buf[ret] = 0;
+    if(strcmp("A basic text item", buf) != 0) return -10;
+    
+    if((ret = db.getItemData("test3/item2", buf, &type, BUF_SIZE)) < 0) return ret;
+    buf[ret] = 0;
+    if(strcmp("A basic text item", buf) != 0) return -11;
 
     return 0;
 }

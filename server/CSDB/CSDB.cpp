@@ -414,6 +414,52 @@ bool CSDB::itemExists(const char* path)
     return false;
 }
 
+
+/**
+ * Get item data from the item at a given path
+ * @param path The path of the item
+ * @param returnBuffer Buffer to write item data to
+ * @param type Pointer to item type, filled with the type of the returned item data
+ * @param bufSize The maximum size to write to the buffer
+ * @param offset The offset to open the file with
+ * @return The number of bytes written to the return buffer if succeeded, error code less than 0 if failed
+ */
+int CSDB::getItemData(const char* path, void* returnBuffer, DTYPE* type, int bufSize, long offset)
+{
+    long ret;
+    item_s* item;
+    collection_s* parent;
+
+    // get the item
+    item = getItem(path);
+
+    if(item == nullptr) return -1;
+
+    parent = (collection_s*)item->collection;
+
+    std::string pathString(parent->path);
+    pathString.push_back('/');
+    pathString.append(item->name);
+
+    int fd = open(pathString.c_str(), O_RDONLY);
+
+    if(fd < 0) return -2;
+
+    // seek to the offset
+    long offsetFound = lseek(fd, offset, SEEK_SET);
+
+    if(offsetFound != offset) return -3;
+
+    // read bytes to the buffer
+    ret = read(fd, returnBuffer, bufSize);
+    
+    if(ret < 0) return -4;
+
+    *type = item->type;
+    return ret;
+}
+
+
 /**
  * Add an item with the given path to the collection
  * @param path Path of the new item
