@@ -435,7 +435,7 @@ size_t CSDB::getItemData(const char* path, void* returnBuffer, DTYPE* type, size
     if(item == nullptr) return 0;
 
     // load item into memory
-    if(loadItem(item) != 0) return 0;
+    if(!item->loaded && loadItem(item) != 0) return 0;
 
     if(offset >= item->dataSize) return 0;
 
@@ -491,6 +491,20 @@ int CSDB::loadItem(item_s* item)
     item->loaded = true;
 
     return 0; 
+}
+
+/**
+ * Unload an item from memory
+ * @param item The item to unload
+ */
+void CSDB::unloadItem(item_s* item)
+{
+    if(item == nullptr) return;
+
+    if(!item->loaded) return;
+
+    if(item->data != nullptr) free(item->data);
+
 }
 
 
@@ -768,12 +782,13 @@ int CSDB::updateManifest(collection_s* collection)
     {
         item_s* item = collection->items[i];
 
-        dprintf(manFile, " %s:%s:%d:%d:%ld:%ld",  item->name, 
+        dprintf(manFile, " %s:%s:%d:%d:%ld:%ld:%lu",  item->name, 
                                                     item->owner == nullptr ? "" : item->owner, 
                                                     item->perm, 
                                                     item->type,
                                                     item->createdTime,
-                                                    item->modifiedTime);
+                                                    item->modifiedTime,
+                                                    item->dataSize);
     }
 
     close(manFile);
@@ -1013,7 +1028,11 @@ void CSDB::setupCollectionManifest(collection_s* collection)
 
         startIndex += len + 1;
 
+        len = strlen(buf + startIndex);
         item->modifiedTime = atol(buf + startIndex);
+
+        startIndex += len + 1;
+        item->dataSize = atol(buf + startIndex);
 
         collection->items[i] = item;
 

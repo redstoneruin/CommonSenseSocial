@@ -25,11 +25,6 @@ enum DTYPE {
     AUDIO_STREAM
 };
 
-union ItemData {
-    char* text;
-    char* location;
-};
-
 typedef struct item_t {
     char* name;
     char* owner;
@@ -103,6 +98,7 @@ private:
     int updateManifest(collection_s* collection);
 
     int loadItem(item_s* item);
+    void unloadItem(item_s* item);
 
     // recursive helpers
     void dumpCollectionsHelper(FILE* file, collection_s* parent, int depth = 0);
