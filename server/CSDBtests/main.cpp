@@ -20,6 +20,7 @@ int itemExistanceTests();
 int itemDeletionTests();
 int itemExistanceTests2();
 int textItemRetrievalTests();
+int ownerAndPermsTests();
 
 void printResult(FILE* file, int result);
 
@@ -53,6 +54,9 @@ int main()
 
     printf("Text item retrieval tests: ");
     printResult(stdout, textItemRetrievalTests());
+
+    printf("Item ownership and permissions tests: ");
+    printResult(stdout, ownerAndPermsTests());
 
     printf("\n");
     db.dumpCollections(stdout);
@@ -164,6 +168,29 @@ int textItemRetrievalTests()
 
     return 0;
 }
+
+int ownerAndPermsTests()
+{
+    int ret;
+    PERM perm;
+    char buf[BUF_SIZE];
+
+    if((ret = db.getOwner("test1/item2", buf, BUF_SIZE)) != 0) return ret;
+    if(strcmp(buf, "") != 0) return -10;
+
+    if((ret = db.getOwner("test3/item2", buf, BUF_SIZE)) != 0) return ret;
+    if(strcmp(buf, "") != 0) return -11;
+
+    if((ret = db.getPerm("test1/item2", &perm)) != 0) return ret;
+    if(perm != PERM::PRIVATE) return -20;
+
+    if((ret = db.getPerm("test3/item2", &perm)) != 0) return ret;
+    if(perm != PERM::PRIVATE) return -21;
+
+    return 0;
+}
+
+
 
 void printResult(FILE* file, int result) 
 {

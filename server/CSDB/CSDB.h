@@ -64,6 +64,9 @@ public:
     int replaceItem(const char* path, const char* text, const char* owner = nullptr, PERM perm = PERM::PRIVATE);
     int deleteItem(const char* path);
 
+    int getOwner(const char* path, void* buf, size_t bufSize);
+    int getPerm(const char* path, PERM* permPointer);
+
     size_t getItemData(const char* path, void* returnBuffer, DTYPE* type, size_t bufSize, size_t offset = 0);
 
     bool collectionExists(const char* path);

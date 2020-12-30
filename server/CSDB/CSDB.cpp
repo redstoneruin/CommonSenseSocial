@@ -622,6 +622,49 @@ int CSDB::deleteItem(const char* path)
 }
 
 
+/**
+ * Get the owner of the item at a given path
+ * @param path The path of the item
+ * @param ownerBuf Buffer to store owner string in
+ * @param bufSize The maximum size of the buffer to write into
+ * @return 0 if successfully wrote owner, error code if error
+ */
+int CSDB::getOwner(const char* path, void* buf, size_t bufSize)
+{
+    item_s* item = getItem(path);
+
+    if(item == nullptr) return -1;
+
+    char* owner = item->owner;
+
+    if(owner == nullptr) {
+        strncpy((char*)buf, "", bufSize);
+        return 0;
+    }
+
+    strncpy((char*)buf, owner, bufSize);
+
+    return 0;
+}
+
+
+/**
+ * Get the permissions for an item
+ * @param path The path of the item
+ * @param permPointer Pointer to perm item to store result
+ * @return 0 if successful, error code if not
+ */
+int CSDB::getPerm(const char* path, PERM* permPointer)
+{
+    item_s* item = getItem(path);
+
+    if(item == nullptr) return -1;
+
+    *permPointer = item->perm;
+
+    return 0;
+}
+
 
 /**
  * Adds the given item to the list of its parent, if not there already
