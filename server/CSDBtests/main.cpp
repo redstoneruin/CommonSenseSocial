@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "../CSDB/CSDB.h"
+#include "../CSDB/CSDBAccessManager.h"
 
 CSDB db;
 
