@@ -141,6 +141,8 @@ int CSDB::addCollection(const char* path)
     std::string pathstring(path);
     std::string formattedCollFilename(_dbDirname);
 
+    if(!validCollectionPath(path)) return -1;
+
     // check if collection already exists
     if(collectionExists(path)) return 0;
 
@@ -371,6 +373,8 @@ item_s* CSDB::getItem(const char* path)
     collection_s* collection;
     std::string pathString(path);
 
+    if(!validItemPath(path)) return nullptr;
+
     sepIndex = pathString.find_last_of('/');
 
     std::string nameString = pathString.substr(sepIndex + 1);
@@ -428,6 +432,8 @@ size_t CSDB::getItemData(const char* path, void* returnBuffer, DTYPE* type, size
 {
     item_s* item;
     char* buf = (char*)returnBuffer;
+
+    if(!validItemPath(path)) return 0;
 
     // get the item
     item = getItem(path);
@@ -518,6 +524,8 @@ int CSDB::replaceItem(const char* path, const char* text, const char* owner, PER
 {
     size_t textLen;
     item_s* item;
+
+    if(!validItemPath(path)) return -1;
     
     textLen = strlen(text);
 
@@ -552,6 +560,8 @@ int CSDB::replaceItem(const char* path, const char* text, const char* owner, PER
  */
 int CSDB::deleteItem(const char* path)
 {
+    if(!validItemPath(path)) return -1;
+
     item_s* item = getItem(path);
 
     if(item == nullptr) return -1;
@@ -1068,6 +1078,8 @@ collection_s* CSDB::getCollection(const char* path)
     std::vector<char*> collectionNames;
     collection_s *nextParent, *lastParent, *ret;
 
+    if(!validCollectionPath(path)) return nullptr;
+
     ret = nullptr;
     
     // first break path into pieces
@@ -1150,9 +1162,11 @@ collection_s* CSDB::getCollection(const char* path)
  */
 void CSDB::dumpCollections(FILE* file)
 {
+    fprintf(file, "------------- Collection structure -------------\n");
     for(int i = 0; i < _numBaseCollections; i++) {
         dumpCollectionsHelper(file, _collections[i]);
     }
+    fprintf(file, "------------------------------------------------\n");
 }
 
 /**
@@ -1167,9 +1181,74 @@ void CSDB::dumpCollectionsHelper(FILE* file, collection_s* parent, int depth)
         fprintf(file, "\t");
     }
 
-    fprintf(file, "%s: %s: %d children\n", parent->name, parent->path, parent->numSubColls);
+    fprintf(file, "%s: %s: %d sub-collections: %llu items\n", parent->name, parent->path, parent->numSubColls, parent->numItems);
 
     for(int i = 0; i < parent->numSubColls; i++) {
         dumpCollectionsHelper(file, parent->subCollections[i], depth+1);
     }
+}
+
+
+
+
+/**
+ * Check whether the path string could be a valid collection
+ * @param path The path to check
+ * @return True if valid, false if not
+ */
+bool CSDB::validCollectionPath(const char* path)
+{
+    size_t length;
+    char lastChar = 0;
+
+    length = strlen(path);
+
+    if(length == 0 || path[0] == '/') return false;
+
+    for(size_t i = 0; i < length; i++) 
+    {
+        char c = path[i];
+        // check characters are valid
+        if(!validPathCharacter(c)){
+            return false;
+        } else if(c == '/' && lastChar == '/') {
+            return false;
+        }
+        lastChar = c;
+    }
+
+    return true;
+}
+
+
+
+/**
+ * Check if the path could be a valid item
+ */
+bool CSDB::validItemPath(const char* path)
+{
+    if(!validCollectionPath(path)) return false;
+
+    size_t length = strlen(path);
+
+    for(size_t i = 0; i < length; i++) {
+        if(path[i] == '/') return true;
+    }
+
+    return false;
+}
+
+
+bool CSDB::validPathCharacter(char c)
+{
+
+    if(    (c >= 'a' && c <= 'z')
+        || (c >= 'A' && c <= 'Z')
+        || (c >= '0' && c <= '9')
+        || (c == '/')
+        || (c == '.')
+        || (c == '+'))
+            return true;
+        
+    return false;
 }

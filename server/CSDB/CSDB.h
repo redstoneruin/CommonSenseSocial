@@ -109,4 +109,10 @@ private:
     static int ftwHelper(const char* path, const struct stat64* statStruct, int info, struct FTW* ftw);
 
     collection_s* parseCollectionString(const char* collectionString, collection_s* parent);
+
+    // input validation
+    bool validCollectionPath(const char* path);
+    bool validItemPath(const char* path);
+
+    bool validPathCharacter(char c);
 };

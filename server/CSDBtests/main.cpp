@@ -11,7 +11,7 @@
 
 CSDB db;
 
-
+int pathFormatTests();
 int additionTests();
 int existanceTests();
 int deletionTests();
@@ -25,11 +25,12 @@ void printResult(FILE* file, int result);
 
 int main()
 {
-    printf("----Dumping collection structure----\n");
     db.dumpCollections(stdout);
 
+    printf("\nPath formatting tests: ");
+    printResult(stdout, pathFormatTests());
 
-    printf("\nAddition tests: ");
+    printf("Addition tests: ");
     printResult(stdout, additionTests());
     
     printf("Existance tests: ");
@@ -53,13 +54,27 @@ int main()
     printf("Text item retrieval tests: ");
     printResult(stdout, textItemRetrievalTests());
 
-    printf("\n---- Dumping collection structure---\n");
+    printf("\n");
     db.dumpCollections(stdout);
 
     return 0;
 }
 
-int additionTests() {
+int pathFormatTests() 
+{
+    if(db.addCollection("/test1/test2") == 0) return -1;
+    if(db.addCollection("") == 0) return -2;
+    if(db.addCollection("test1/test2//test3") == 0) return -3;
+    
+    if(db.replaceItem("test","test") == 0) return -4;
+    if(db.replaceItem("/test1/test2", "test") == 0) return -5;
+    if(db.replaceItem("test1//test2", "test") == 0) return -6;
+
+    return 0;
+}
+
+int additionTests() 
+{
     int ret;
 
     if((ret = db.addCollection("test1")) != 0) return ret;
