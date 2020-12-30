@@ -82,6 +82,15 @@ void CSDB::setup()
 
 
 /**
+ * Store the DB directory name in the given buffer
+ */
+void CSDB::getDBName(void* buf, size_t bufSize)
+{
+    strncpy((char*)buf, _dbDirname, bufSize);
+}
+
+
+/**
  * Load DB using collections file
  * @param collsFilename Filename for collections
  */

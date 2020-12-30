@@ -58,6 +58,8 @@ public:
     CSDB(const char* dirname);
     ~CSDB();
 
+    void getDBName(void* buf, size_t bufSize);
+
     int addCollection(const char* path);
     int deleteCollection(const char* path);
 

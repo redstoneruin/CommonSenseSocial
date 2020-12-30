@@ -12,6 +12,7 @@
 
 CSDB db;
 
+int dbNameTests();
 int pathFormatTests();
 int additionTests();
 int existanceTests();
@@ -29,7 +30,10 @@ int main()
 {
     db.dumpCollections(stdout);
 
-    printf("\nPath formatting tests: ");
+    printf("\nDB name tests: ");
+    printResult(stdout, dbNameTests());
+
+    printf("Path formatting tests: ");
     printResult(stdout, pathFormatTests());
 
     printf("Addition tests: ");
@@ -61,6 +65,15 @@ int main()
 
     printf("\n");
     db.dumpCollections(stdout);
+
+    return 0;
+}
+
+int dbNameTests()
+{
+    char buf[BUF_SIZE];
+    db.getDBName(buf, BUF_SIZE);
+    if(strcmp(buf, "db") != 0) return -1;
 
     return 0;
 }
