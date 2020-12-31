@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "CSDB.h"
-
+#include "CSDBRuleManager.h"
 
 /**
  * CSDBAccessManager class
@@ -22,4 +22,6 @@ public:
 	void addDB(const char* name);
 private:
 	std::vector<CSDB*> dbs;
+
+	CSDBRuleManager ruleManager;
 };

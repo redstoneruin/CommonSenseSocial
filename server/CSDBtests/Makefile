@@ -1,10 +1,10 @@
 # Author: Ryan Steinwert
 # Makefile for CSDB test suite
 
-SOURCES = ../CSDB/CSDB.cpp ../CSDB/CSDBAccessManager.cpp main.cpp
-HEADERS = ../CSDB/CSDB.h ../CSDB/CSDBAccessManager.h
+SOURCES = ../CSDB/CSDB.cpp ../CSDB/CSDBAccessManager.cpp ../CSDB/CSDBRuleManager.cpp main.cpp
+HEADERS = ../CSDB/CSDB.h ../CSDB/CSDBAccessManager.h ../CSDB/CSDBRuleManager.h
 
-OBJECTS = CSDB.o CSDBAccessManager.o main.o
+OBJECTS = CSDB.o CSDBAccessManager.o CSDBRuleManager.o main.o
 DEPS = $(OBJECTS:.o=.d)
 TARGET = CSDBtest
 
