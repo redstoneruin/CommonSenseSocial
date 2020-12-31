@@ -22,3 +22,14 @@ CSDBRuleManager::CSDBRuleManager()
 CSDBRuleManager::~CSDBRuleManager()
 {
 }
+
+
+
+/**
+ * Loads the rule set from the given file
+ * @param path The path of the file
+ */
+bool CSDBRuleManager::loadRules(const char* path)
+{
+	return true;	
+}

@@ -58,4 +58,6 @@ class CSDBRuleManager {
 public:
 	CSDBRuleManager();
 	~CSDBRuleManager();
+
+	bool loadRules(const char* path);
 };

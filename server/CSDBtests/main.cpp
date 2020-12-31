@@ -8,9 +8,11 @@
 #include <string.h>
 
 #include "../CSDB/CSDB.h"
+#include "../CSDB/CSDBRuleManager.h"
 #include "../CSDB/CSDBAccessManager.h"
 
 CSDB db;
+CSDBRuleManager ruleManager;
 CSDBAccessManager accessManager;
 
 int dbNameTests();
@@ -25,13 +27,18 @@ int itemExistanceTests2();
 int textItemRetrievalTests();
 int ownerAndPermsTests();
 
+
+int ruleLoadTests();
+
+
+
 void printResult(FILE* file, int result);
 
 int main()
 {
     db.dumpCollections(stdout);
 
-    printf("\n---------- CSDB Tests ----------\n");
+    printf("\n--------------- CSDB Tests ---------------\n");
 
     printf("DB name tests: ");
     printResult(stdout, dbNameTests());
@@ -66,7 +73,14 @@ int main()
     printf("Item ownership and permissions tests: ");
     printResult(stdout, ownerAndPermsTests());
 
-    printf("-------- End CSDB Tests --------\n");
+    printf("------------- End CSDB Tests -------------\n");
+
+    printf("\n----------- Rule Manager Tests -----------\n");
+
+    printf("Rule loading tests: ");
+    printResult(stdout, ruleLoadTests());
+
+    printf("--------- End Rule Manager Tests ---------\n");
 
     printf("\n");
     db.dumpCollections(stdout);
@@ -209,6 +223,18 @@ int ownerAndPermsTests()
 
     return 0;
 }
+
+
+
+
+
+int ruleLoadTests()
+{
+    if(!ruleManager.loadRules("rules.rules")) return -1;
+
+    return 0;
+}
+
 
 
 
