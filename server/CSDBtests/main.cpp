@@ -11,6 +11,7 @@
 #include "../CSDB/CSDBAccessManager.h"
 
 CSDB db;
+CSDBAccessManager accessManager;
 
 int dbNameTests();
 int pathFormatTests();
@@ -30,7 +31,9 @@ int main()
 {
     db.dumpCollections(stdout);
 
-    printf("\nDB name tests: ");
+    printf("\n---------- CSDB Tests ----------\n");
+
+    printf("DB name tests: ");
     printResult(stdout, dbNameTests());
 
     printf("Path formatting tests: ");
@@ -63,8 +66,11 @@ int main()
     printf("Item ownership and permissions tests: ");
     printResult(stdout, ownerAndPermsTests());
 
+    printf("-------- End CSDB Tests --------\n");
+
     printf("\n");
     db.dumpCollections(stdout);
+
 
     return 0;
 }
