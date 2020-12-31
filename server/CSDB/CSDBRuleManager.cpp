@@ -75,7 +75,7 @@ int CSDBRuleManager::parseMatch(FILE* file)
 {
 	unsigned long nextSep;
 	char buf[PARSE_BUF_SIZE];
-	rule_s rule;
+	rule_s* rule;
 	std::vector<std::string> pathVector;
 	std::vector<std::string> varVector;
 
@@ -123,6 +123,11 @@ int CSDBRuleManager::parseMatch(FILE* file)
 	}
 
 
+	// create and initialize the rule
+	rule = (rule_s*) malloc (sizeof(rule_s));
+	initRule(rule);
+
+
 	// continue to parse until closing bracket found
 	while(fscanf(file, "%s", buf) == 1) 
 	{
@@ -135,4 +140,45 @@ int CSDBRuleManager::parseMatch(FILE* file)
 	}
 
 	return -2;
+}
+
+
+
+
+/**
+ * Initialize a rule with default values
+ * @param rule Pointer to the rule to initialize
+ */
+void CSDBRuleManager::initRule(rule_s* rule)
+{
+	rule->pathSize = 0;
+	rule->numPathVars = 0;
+	rule->collectionPath = nullptr;
+	rule->pathVariables = nullptr;
+	rule->read = false;
+	rule->write = false;
+	rule->prereq = nullptr;
+}
+
+
+/**
+ * Add a prereq onto the linked list of prereqs
+ * @param rule Pointer to the rule to add the prereq
+ * @param prereq Pointer to prereq to add
+ */
+void CSDBRuleManager::addPrereq(rule_s* rule, prereq_s* prereq)
+{
+
+	if(rule->prereq == nullptr) {
+		rule->prereq = prereq;
+		return;
+	}
+
+	prereq_s* prereqIndex = rule->prereq;
+
+	while(prereqIndex->next != nullptr) {
+		prereqIndex = prereqIndex->next;
+	}
+
+	prereqIndex->next = prereq;
 }

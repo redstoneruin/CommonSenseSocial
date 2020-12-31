@@ -69,4 +69,6 @@ private:
 
 	int parseMatch(FILE* file);
 
+	void initRule(rule_s* rule);
+	void addPrereq(rule_s* rule, prereq_s* prereq);
 };
