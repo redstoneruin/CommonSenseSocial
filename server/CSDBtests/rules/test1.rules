@@ -1,0 +1,3 @@
+match users/{uid}: {
+	allow rw if uid == auth.uid
+}

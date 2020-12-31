@@ -5,7 +5,7 @@
  *
  * Definitions for database rule manager
  */
-
+#include <vector>
 
 enum PTYPE {
 	NULL_VALUE,
@@ -47,7 +47,10 @@ typedef struct prereq_t {
 
 
 typedef struct rule_t {
-	char* collectionPath;
+	int pathSize;
+	int numPathVars;
+	char** collectionPath;
+	char** pathVariables;
 	bool read;
 	bool write;
 	prereq_s* prereq;
@@ -59,5 +62,11 @@ public:
 	CSDBRuleManager();
 	~CSDBRuleManager();
 
-	bool loadRules(const char* path);
+	int loadRules(const char* path);
+
+private:
+	std::vector<rule_s> rules;
+
+	int parseMatch(FILE* file);
+
 };
