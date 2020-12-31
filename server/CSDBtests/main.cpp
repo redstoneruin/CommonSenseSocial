@@ -230,7 +230,8 @@ int ownerAndPermsTests()
 
 int ruleLoadTests()
 {
-    if(!ruleManager.loadRules("rules/test1.rules")) return -1;
+    int ret;
+    if((ret = ruleManager.loadRules("rules/test1.rules")) != 0) return ret;
 
     return 0;
 }

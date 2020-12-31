@@ -49,11 +49,12 @@ int CSDBRuleManager::loadRules(const char* path)
 	// read by line into the parse buffer
 	while(fscanf(file, "%s", buf) == 1) 
 	{
-		if(	strcmp(buf, "match") == 0
-			&& (ret = parseMatch(file)) != 0) {
-
-			fclose(file);
-			return ret;
+		if(strcmp(buf, "match") == 0) {
+			ret = parseMatch(file);
+			if(ret != 0) {				
+				fclose(file);
+				return ret;
+			}
 		} else {
 			fclose(file);
 			return -2;
