@@ -83,6 +83,8 @@ void CSDB::setup()
 
 /**
  * Store the DB directory name in the given buffer
+ * @param buf Buffer to store name in
+ * @param bufSize Maximum size to write to buffer
  */
 void CSDB::getDBName(void* buf, size_t bufSize)
 {
