@@ -7,12 +7,13 @@
  */
 #include <vector>
 
+
 enum PTYPE {
 	NULL_VALUE,
 	STRING,
 	NUMBER,
-	COLLECTION_NAME,
-	AUTH_USER
+	PATH_VAR,
+	AUTH_UID
 };
 
 
@@ -25,16 +26,10 @@ enum OPERATOR {
 };
 
 
-union param_value {
-	char* str;
-	char* matchVariable;
-	long num;
-};
-
 
 typedef struct param_t {
 	PTYPE type;
-	union param_value value;
+	char* value;
 } param_s;
 
 

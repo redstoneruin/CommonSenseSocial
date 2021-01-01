@@ -4,13 +4,18 @@
  * Implementation file for database rule manager
  */
 #define PARSE_BUF_SIZE 2048
+
 #define VARIABLE_STRING "%VAR%"
+#define AUTH_UID_STRING "auth.uid"
 
 #include <stdio.h>
 #include <string.h>
 #include <string>
 
 #include "CSDBRuleManager.h"
+
+
+
 
 
 /**
@@ -162,6 +167,7 @@ int CSDBRuleManager::parseMatch(FILE* file)
 int CSDBRuleManager::parsePrereq(char* buf, rule_s* rule)
 {
 	int ret, param1len, param2len;
+	bool param1Valid, param2Valid;
 	char permsBuf[3];
 	char param1Buf[65];
 	char param2Buf[65];
@@ -218,15 +224,53 @@ int CSDBRuleManager::parsePrereq(char* buf, rule_s* rule)
 		return -2;
 	}
 
-	// copy over params
-	param1len = strlen(param1Buf);
-	param2len = strlen(param2Buf);
 
-	prereq->param1.value.str = (char*) malloc (sizeof(char) * (param1len+1));
-	prereq->param2.value.str = (char*) malloc (sizeof(char) * (param2len+1));
+	// check for special variables
+	if(strcmp(param1Buf, AUTH_UID_STRING) == 0) {
+		param1Valid = true;
+		prereq->param1.type = PTYPE::AUTH_UID;
+		prereq->param1.value = nullptr;
+	}
+
+	if(strcmp(param2Buf, AUTH_UID_STRING) == 0) {
+		param2Valid = true;
+		prereq->param1.type = PTYPE::AUTH_UID;
+		prereq->param1.value = nullptr;
+	}
+
 	
-	strncpy(prereq->param1.value.str, param1Buf, param1len+1);
-	strncpy(prereq->param2.value.str, param2Buf, param2len+1);
+	// check variable types
+	for(int i = 0; i < rule->numPathVars && (!param1Valid || !param2Valid); i++) {
+		if(!param1Valid && strcmp(rule->pathVariables[i], param1Buf) == 0) {
+			param1Valid = true;
+			prereq->param1.type = PATH_VAR;
+		}
+
+		if(!param2Valid && strcmp(rule->pathVariables[i], param2Buf) == 0) {
+			param2Valid = true;
+			prereq->param1.type = PATH_VAR;
+		}
+	}
+
+	if(!param1Valid || !param2Valid) return -3;
+
+	if(prereq->param1.type == PTYPE::STRING || prereq->param1.type == PTYPE::PATH_VAR) {
+
+		// copy over params
+		param1len = strlen(param1Buf);
+
+		prereq->param1.value = (char*) malloc (sizeof(char) * (param1len+1));
+		
+		strncpy(prereq->param1.value, param1Buf, param1len+1);
+	}
+
+	if(prereq->param2.type == PTYPE::STRING || prereq->param2.type == PTYPE::PATH_VAR) {
+		param2len = strlen(param2Buf);
+
+		prereq->param2.value = (char*) malloc (sizeof(char) * (param2len+1));
+
+		strncpy(prereq->param2.value, param2Buf, param2len+1);
+	}
 
 	addPrereq(rule, prereq);
 
