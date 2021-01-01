@@ -141,10 +141,15 @@ int CSDBRuleManager::parseMatch(FILE* file)
 			}
 		}
 
-		
+		if(strchr(buf, '}') != nullptr) {
+			// found closing character, add to rules and return
+			rules.push_back(rule);
+			return 0;
+		}
 	}
 
-	return 0;
+	free(rule);
+	return -1;
 }
 
 

@@ -1,3 +1,4 @@
 match 
-users/{uid}:
+users/{uid}: {
 	allow rw if uid == auth.uid
+}
