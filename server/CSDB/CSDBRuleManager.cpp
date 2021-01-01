@@ -47,9 +47,9 @@ int CSDBRuleManager::loadRules(const char* path)
 	if(file == nullptr) return -1;
 
 	// read by line into the parse buffer
-	while(fscanf(file, "%s", buf) == 1) 
+	while(fgets(buf, PARSE_BUF_SIZE, file) != nullptr) 
 	{
-		if(strcmp(buf, "match") == 0) {
+		if(strstr(buf, "match") != nullptr) {
 			ret = parseMatch(file);
 			if(ret != 0) {				
 				fclose(file);
@@ -73,6 +73,7 @@ int CSDBRuleManager::loadRules(const char* path)
  */
 int CSDBRuleManager::parseMatch(FILE* file)
 {
+	int ret;
 	unsigned long nextSep;
 	char buf[PARSE_BUF_SIZE];
 	rule_s* rule;
@@ -80,7 +81,7 @@ int CSDBRuleManager::parseMatch(FILE* file)
 	std::vector<std::string> varVector;
 
 	// first parse the match path
-	if(fscanf(file, "%s", buf) != 1) return -1;
+	if(fgets(buf, PARSE_BUF_SIZE, file) == nullptr) return -1;
 
 	std::string pathString(buf);
 
@@ -129,19 +130,103 @@ int CSDBRuleManager::parseMatch(FILE* file)
 
 
 	// continue to parse until closing bracket found
-	while(fscanf(file, "%s", buf) == 1) 
+	while(fgets(buf, PARSE_BUF_SIZE, file) != nullptr) 
 	{
 		std::string str(buf);
+
+		if(strstr(buf, "allow")) {
+			if((ret = parsePrereq(buf, rule)) != 0) {
+				free(rule);
+				return ret;
+			}
+		}
+
 		
-		// check for the close bracket
-		if(str.find_first_of('}') != std::string::npos) {
-			return 0;
-		}	
 	}
 
-	return -2;
+	return 0;
 }
 
+
+/**
+ * Parse a prereq from a file after the allow statement
+ * @param file The file to continue parsing, must be open
+ * @param rule The rule to fill with prereq
+ * @return 0 if successful, error code if not
+ */
+int CSDBRuleManager::parsePrereq(char* buf, rule_s* rule)
+{
+	int ret, param1len, param2len;
+	char permsBuf[3];
+	char param1Buf[65];
+	char param2Buf[65];
+	char opBuf[4];
+	prereq_s* prereq;
+
+	//
+	// TODO: allow more than just string type
+	//
+
+	prereq = (prereq_s*) malloc (sizeof(prereq_s));
+	prereq->next = nullptr;
+
+	prereq->param1.type = prereq->param2.type = PTYPE::STRING;
+
+
+	if((ret = sscanf(buf, "%*s %2s %*s %64s %3s %64s", permsBuf, param1Buf, opBuf, param2Buf)) < 1) {
+		free(prereq);
+		return -1;
+	} else if(ret == 1) {
+		prereq->hasCheck = false;
+	} else if(ret < 4) {
+		free(prereq);
+		return -1;
+	} else {
+		prereq->hasCheck = true;
+	}
+
+	if(strchr(permsBuf, 'r') != nullptr) prereq->read = true;
+	else prereq->read = false;
+
+	if(strchr(permsBuf, 'w') != nullptr) prereq->write = true;
+	else prereq->write = false;
+
+	if(!prereq->hasCheck) {
+		addPrereq(rule, prereq);
+		return 0;
+	}
+
+	// parse the operator
+	if(strcmp(opBuf, "==") == 0) {
+		prereq->op = OPERATOR::EQUAL;
+	} else if(strcmp(opBuf, "<=") == 0) {
+		prereq->op = OPERATOR::LESS_EQUAL;
+	} else if(strcmp(opBuf, ">=") == 0) {
+		prereq->op = OPERATOR::GREATER_EQUAL;
+	} else if(strcmp(opBuf, ">") == 0) {
+		prereq->op = OPERATOR::GREATER_THAN;
+	} else if(strcmp(opBuf, "<") == 0) {
+		prereq->op = OPERATOR::LESS_THAN;
+	} else {
+		// invalid op, failure
+		free(prereq);
+		return -2;
+	}
+
+	// copy over params
+	param1len = strlen(param1Buf);
+	param2len = strlen(param2Buf);
+
+	prereq->param1.value.str = (char*) malloc (sizeof(char) * (param1len+1));
+	prereq->param2.value.str = (char*) malloc (sizeof(char) * (param2len+1));
+	
+	strncpy(prereq->param1.value.str, param1Buf, param1len+1);
+	strncpy(prereq->param2.value.str, param2Buf, param2len+1);
+
+	addPrereq(rule, prereq);
+
+	return 0;
+}
 
 
 
@@ -155,8 +240,6 @@ void CSDBRuleManager::initRule(rule_s* rule)
 	rule->numPathVars = 0;
 	rule->collectionPath = nullptr;
 	rule->pathVariables = nullptr;
-	rule->read = false;
-	rule->write = false;
 	rule->prereq = nullptr;
 }
 

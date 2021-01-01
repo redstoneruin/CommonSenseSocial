@@ -42,6 +42,9 @@ typedef struct prereq_t {
 	param_s param1;
 	param_s param2;
 	OPERATOR op;
+	bool hasCheck;
+	bool read;
+	bool write;
 	prereq_t* next;
 } prereq_s;
 
@@ -51,8 +54,6 @@ typedef struct rule_t {
 	int numPathVars;
 	char** collectionPath;
 	char** pathVariables;
-	bool read;
-	bool write;
 	prereq_s* prereq;
 } rule_s;
 
@@ -65,9 +66,11 @@ public:
 	int loadRules(const char* path);
 
 private:
-	std::vector<rule_s> rules;
+	std::vector<rule_s*> rules;
 
 	int parseMatch(FILE* file);
+
+	int parsePrereq(char* buf, rule_s* rule);
 
 	void initRule(rule_s* rule);
 	void addPrereq(rule_s* rule, prereq_s* prereq);
