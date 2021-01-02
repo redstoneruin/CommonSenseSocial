@@ -10,7 +10,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <string>
 
 #include "CSDBRuleManager.h"
 
@@ -68,6 +67,64 @@ int CSDBRuleManager::loadRules(const char* path)
 
 	fclose(file);
 	return 0;
+}
+
+
+/**
+ * Check whether the user has access to an item/collection at the given path
+ * @param path The path of the item to access
+ * @param uid The user id for the request
+ * @param perms The permissions wanted, contains 'w', 'r' or both
+ * @return True if the user has access to the given path, false if does not
+ */
+bool CSDBRuleManager::hasPerms(const char* path, const char* uid, const char* perms)
+{
+	unsigned long nextSep;
+	bool wantsRead, wantsWrite;
+	std::vector<std::string> pathVector;
+	std::string pathString(path);
+
+	wantsRead = wantsWrite = false;
+
+	if(strchr(perms, 'r') != nullptr) wantsRead = true;
+	if(strchr(perms, 'w') != nullptr) wantsWrite = true;
+
+	while(true) 
+	{
+		nextSep = pathString.find_first_of('/');
+
+		if(nextSep == 0) return false;
+
+		pathVector.push_back(pathString.substr(0,nextSep));
+
+		
+		if(nextSep == std::string::npos) break;
+
+		pathString = pathString.substr(nextSep+1);
+
+	}
+
+	for(rule_s* rule : rules)
+	{
+		if(isPathMatch(pathVector, *rule)) {
+
+		}
+	}
+
+	return false;
+}
+
+
+
+/**
+ * Check if the path vector matches a given rule, and therefore will apply
+ * @param pathVector The path vector containing the name hierarchy
+ * @param rule The rule struct to check for matches
+ * @return True if this rule matches the path vector, false if does not
+ */
+bool CSDBRuleManager::isPathMatch(std::vector<std::string> pathVector, rule_s rule)
+{
+	return false;
 }
 
 

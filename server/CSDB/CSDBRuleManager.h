@@ -6,6 +6,7 @@
  * Definitions for database rule manager
  */
 #include <vector>
+#include <string>
 
 
 enum PTYPE {
@@ -60,6 +61,8 @@ public:
 
 	int loadRules(const char* path);
 
+	bool hasPerms(const char* path, const char* uid, const char* perms);
+
 private:
 	std::vector<rule_s*> rules;
 
@@ -69,4 +72,6 @@ private:
 
 	void initRule(rule_s* rule);
 	void addPrereq(rule_s* rule, prereq_s* prereq);
+
+	bool isPathMatch(std::vector<std::string> pathVector, rule_s rule);
 };
