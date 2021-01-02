@@ -243,9 +243,9 @@ int ruleLoadTests()
 
 int rulePermsTests()
 {
-    if(ruleManager.hasPerms("notapath/notapath", "myuid", "rw")) return -3;
-    if(!ruleManager.hasPerms("users/myuid/test1", "myuid", "rw")) return -1;
-    if(ruleManager.hasPerms("users/notmyuid/test1", "myuid", "rw")) return -2;
+    if(ruleManager.hasPerms("notapath/notapath", "myuid", "rw")) return -1;
+    if(!ruleManager.hasPerms("users/myuid/test1", "myuid", "rw")) return -2;
+    if(ruleManager.hasPerms("users/notmyuid/test1", "myuid", "rw")) return -3;
 
     return 0;
 }

@@ -75,4 +75,7 @@ private:
 	void addPrereq(rule_s* rule, prereq_s* prereq);
 
 	bool isPathMatch(std::vector<std::string> pathVector, rule_s rule);
+	prereq_s* passesRule(rule_s rule, std::vector<std::string> pathVector, const char* uid);
+
+	unsigned int lookupPathVar(rule_s rule, const char* varName);
 };

@@ -103,8 +103,15 @@ bool CSDBRuleManager::hasPerms(const char* path, const char* uid, const char* pe
 
 	for(rule_s* rule : rules)
 	{
-		if(isPathMatch(pathVector, *rule)) {
-		
+		prereq_s* passedPrereq;
+		if((passedPrereq = passesRule(*rule, pathVector, uid)) != nullptr) {
+			if(wantsRead && wantsWrite) {
+				if(passedPrereq->read && passedPrereq->write) return true;
+			} else if(wantsRead && passedPrereq->read) {
+				return true;
+			} else if(wantsWrite && passedPrereq->write) {
+				return true;
+			}
 		}
 	}
 
@@ -112,6 +119,136 @@ bool CSDBRuleManager::hasPerms(const char* path, const char* uid, const char* pe
 }
 
 
+/**
+ * Check if a rule is passed, given that the path matches
+ * @param rule The rule to check
+ * @param uid The current user's uid
+ * @return The prereq that was passed, null if not
+ */
+prereq_s* CSDBRuleManager::passesRule(rule_s rule, std::vector<std::string> pathVector, const char* uid)
+{
+	if(!isPathMatch(pathVector, rule)) return nullptr;
+
+	prereq_s* prereqIndex;
+
+	// go through each prereq
+	prereqIndex = rule.prereq;
+
+	while(prereqIndex != nullptr)
+	{
+		if(!prereqIndex->hasCheck) return prereqIndex;
+
+		bool passes;
+		int strComparison;
+		const char* param1str;
+		const char* param2str;
+		param_s param1 = prereqIndex->param1;
+		param_s param2 = prereqIndex->param2;
+		OPERATOR op = prereqIndex->op;
+
+		switch(param1.type) {
+		case PTYPE::STRING:
+			param1str = param1.value;
+			break;
+		case PTYPE::NUMBER:
+			param1str = param1.value;
+			break;
+		case PTYPE::PATH_VAR:
+			param1str = pathVector[lookupPathVar(rule, param1.value)].c_str();
+			break;
+		case PTYPE::AUTH_UID:
+			param1str = uid;
+			break;
+		default:
+			param1str = "";
+			break;
+		}
+
+		switch(param2.type) {
+		case PTYPE::STRING:
+			param2str = param2.value;
+			break;
+		case PTYPE::NUMBER:
+			param2str = param2.value;
+			break;
+		case PTYPE::PATH_VAR:
+			param2str = pathVector[lookupPathVar(rule, param2.value)].c_str();
+			break;
+		case PTYPE::AUTH_UID:
+			param2str = uid;
+			break;
+		default:
+			param2str = "";
+			break;
+		}
+
+		strComparison = strcmp(param1str, param2str);
+
+		switch(op) {
+		case OPERATOR::EQUAL:
+			passes = strComparison == 0;
+			break;
+		case OPERATOR::LESS_THAN:
+			passes = strComparison < 0;
+			break;
+		case OPERATOR::GREATER_THAN:
+			passes = strComparison > 0;
+			break;
+		case OPERATOR::LESS_EQUAL:
+			passes = strComparison <= 0;
+			break;
+		case OPERATOR::GREATER_EQUAL:
+			passes = strComparison >= 0;
+			break;
+		default:
+			passes = false;
+		}
+
+		//printf("compared [%s] and [%s], got %d\n", param1str, param2str, strComparison);
+
+		if(passes) return prereqIndex;
+
+		prereqIndex = prereqIndex->next;	
+	}
+
+	return nullptr;
+}
+
+
+/**
+ * Get in index of a path variable in for path vector
+ * @param rule The rule to search
+ * @param varName The variable name to find
+ * @return The index of the path variable in the path vector
+ */
+unsigned int CSDBRuleManager::lookupPathVar(rule_s rule, const char* varName)
+{
+	unsigned int varIndex, varIndexInPath;
+
+	for(unsigned int i = 0; i < rule.numPathVars; i++) 
+	{
+		char* var = rule.pathVariables[i];
+		if(strcmp(var, varName) == 0) {
+			varIndex = i;
+			break;
+		}
+	}
+
+	varIndexInPath = 0;
+	for(unsigned int i = 0; i < rule.pathSize; i++) 
+	{
+		char* pathName = rule.collectionPath[i];
+		if(strcmp(pathName, VARIABLE_STRING) == 0) {
+			// found a variable
+			if(varIndexInPath == varIndex) return i;
+			varIndexInPath++;
+		}
+
+	}
+
+	// should never reach here due to parsing rules
+	return (unsigned int)-1;
+}
 
 /**
  * Check if the path vector matches a given rule, and therefore will apply
@@ -121,9 +258,6 @@ bool CSDBRuleManager::hasPerms(const char* path, const char* uid, const char* pe
  */
 bool CSDBRuleManager::isPathMatch(std::vector<std::string> pathVector, rule_s rule)
 {
-	int currentPathVar;
-
-
 	// check whether the path is shorter than the rule path
 	if(pathVector.size() < rule.pathSize) return false;
 
@@ -205,6 +339,7 @@ int CSDBRuleManager::parseMatch(FILE* file)
 	rule = (rule_s*) malloc (sizeof(rule_s));
 	initRule(rule);
 
+	fillRulePath(rule, pathVector, varVector);
 
 	// continue to parse until closing bracket found
 	while(fgets(buf, PARSE_BUF_SIZE, file) != nullptr) 
@@ -213,6 +348,8 @@ int CSDBRuleManager::parseMatch(FILE* file)
 
 		if(strstr(buf, "allow")) {
 			if((ret = parsePrereq(buf, rule)) != 0) {
+				if(rule->collectionPath != nullptr) free(rule->collectionPath);
+				if(rule->pathVariables != nullptr) free(rule->pathVariables);
 				free(rule);
 				return ret;
 			}
@@ -220,13 +357,14 @@ int CSDBRuleManager::parseMatch(FILE* file)
 
 		if(strchr(buf, '}') != nullptr) {
 			// found closing character, add to rules and return
-			fillRulePath(rule, pathVector, varVector);
 
 			rules.push_back(rule);
 			return 0;
 		}
 	}
 
+	if(rule->collectionPath != nullptr) free(rule->collectionPath);
+	if(rule->pathVariables != nullptr) free (rule->pathVariables);
 	free(rule);
 	return -1;
 }
@@ -330,6 +468,7 @@ int CSDBRuleManager::parsePrereq(char* buf, rule_s* rule)
 		return -2;
 	}
 
+	param1Valid = param2Valid = false;
 
 	// check for special variables
 	if(strcmp(param1Buf, AUTH_UID_STRING) == 0) {
@@ -340,8 +479,8 @@ int CSDBRuleManager::parsePrereq(char* buf, rule_s* rule)
 
 	if(strcmp(param2Buf, AUTH_UID_STRING) == 0) {
 		param2Valid = true;
-		prereq->param1.type = PTYPE::AUTH_UID;
-		prereq->param1.value = nullptr;
+		prereq->param2.type = PTYPE::AUTH_UID;
+		prereq->param2.value = nullptr;
 	}
 
 	
@@ -354,7 +493,7 @@ int CSDBRuleManager::parsePrereq(char* buf, rule_s* rule)
 
 		if(!param2Valid && strcmp(rule->pathVariables[i], param2Buf) == 0) {
 			param2Valid = true;
-			prereq->param1.type = PATH_VAR;
+			prereq->param2.type = PATH_VAR;
 		}
 	}
 
