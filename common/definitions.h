@@ -47,4 +47,5 @@
 typedef struct request_info_t {
 	const char* uid;
 	const char* perms;
+	bool isAdmin = false;
 } request_info_s;

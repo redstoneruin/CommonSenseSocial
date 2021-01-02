@@ -24,8 +24,13 @@ public:
 	~CSDBAccessManager();
 
 	int addDB(const char* name, const char* rulesFile);
+
+	int addCollection(const char* dbName, const char* path, request_info_s requestInfo);
+	int deleteCollection(const char* dbName, const char* path, request_info_s requestInfo);
 private:
 	std::vector<CSDB*> dbs;
 
 	std::vector<CSDBRuleManager*> rms;
+
+	void getDBPair(const char* dbName, CSDB** db, CSDBRuleManager** rm);
 };

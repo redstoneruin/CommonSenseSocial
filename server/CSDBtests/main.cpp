@@ -34,7 +34,8 @@ int ruleLoadTests();
 int rulePermsTests();
 
 int dbCreationTests();
-int accessManagerCollectionTests();
+int accessManagerCollectionAddTests();
+int accessManagerCollectionDeleteTests();
 
 
 
@@ -100,8 +101,11 @@ int main()
     printf("Access manager db creation tests: ");
     printResult(stdout, dbCreationTests());
 
-    printf("Access manager collection tests: ");
-    printResult(stdout, accessManagerCollectionTests());
+    printf("Access manager collection add tests: ");
+    printResult(stdout, accessManagerCollectionAddTests());
+
+    printf("Access manager collection delete tests: ");
+    printResult(stdout, accessManagerCollectionDeleteTests());
 
     printf("-------- End Access Manager Tests --------\n");
 
@@ -286,13 +290,45 @@ int dbCreationTests()
     return 0;
 }
 
-int accessManagerCollectionTests()
+int accessManagerCollectionAddTests()
 {
     int ret;
+    request_info_s requestInfo;
+    requestInfo.uid = "myuid";
+    requestInfo.isAdmin = true;
+
+    if((ret = accessManager.addCollection("db1", "users", requestInfo)) != 0) return ret;
+    if((ret = accessManager.addCollection("db2", "users", requestInfo)) != 0) return ret;
+
+    if((ret = accessManager.addCollection("db1", "public", requestInfo)) != 0) return ret;
+    if((ret = accessManager.addCollection("db2", "public", requestInfo)) != 0) return ret;
+
+    requestInfo.isAdmin = false;
+
+    if((ret = accessManager.addCollection("db1", "users/myuid", requestInfo)) != 0) return ret;
+    if((ret = accessManager.addCollection("db2", "users/myuid", requestInfo)) != 0) return ret;
+
+    if((ret = accessManager.addCollection("db1", "public/collection1", requestInfo)) != 0) return ret;
+    if((ret = accessManager.addCollection("db2", "public/collection1", requestInfo)) != 0) return ret;
+
+    if((ret = accessManager.addCollection("db1", "users/myuid/throwaway1", requestInfo)) != 0) return ret;
+    if((ret = accessManager.addCollection("db2", "public/throwaway2", requestInfo)) != 0) return ret;
 
     return 0;
 }
 
+
+int accessManagerCollectionDeleteTests()
+{
+    int ret;
+    request_info_s requestInfo;
+    requestInfo.uid = "myuid";
+
+    if((ret = accessManager.deleteCollection("db1", "users/myuid/throwaway1", requestInfo)) != 0) return ret;
+    if((ret = accessManager.deleteCollection("db2", "public/throwaway2", requestInfo)) != 0) return ret;
+
+    return 0;
+}
 
 
 

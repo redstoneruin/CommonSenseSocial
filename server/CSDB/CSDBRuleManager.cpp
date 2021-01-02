@@ -81,6 +81,8 @@ bool CSDBRuleManager::hasPerms(const char* path, request_info_s requestInfo)
 	std::vector<std::string> pathVector;
 	std::string pathString(path);
 
+	if(requestInfo.isAdmin) return true;
+
 	wantsRead = wantsWrite = false;
 
 	if(strchr(requestInfo.perms, 'r') != nullptr) wantsRead = true;
@@ -101,6 +103,7 @@ bool CSDBRuleManager::hasPerms(const char* path, request_info_s requestInfo)
 	for(rule_s* rule : rules)
 	{
 		prereq_s* passedPrereq;
+		
 		if((passedPrereq = passesRule(*rule, pathVector, requestInfo)) != nullptr) {
 			if(wantsRead && wantsWrite) {
 				if(passedPrereq->read && passedPrereq->write) return true;
@@ -124,6 +127,7 @@ bool CSDBRuleManager::hasPerms(const char* path, request_info_s requestInfo)
  */
 prereq_s* CSDBRuleManager::passesRule(rule_s rule, std::vector<std::string> pathVector, request_info_s requestInfo)
 {
+
 	if(!isPathMatch(pathVector, rule)) return nullptr;
 
 	prereq_s* prereqIndex;
