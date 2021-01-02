@@ -29,6 +29,7 @@ int ownerAndPermsTests();
 
 
 int ruleLoadTests();
+int rulePermsTests();
 
 
 
@@ -79,6 +80,9 @@ int main()
 
     printf("Rule loading tests: ");
     printResult(stdout, ruleLoadTests());
+
+    printf("Rule permissions tests: ");
+    printResult(stdout, rulePermsTests());
 
     printf("--------- End Rule Manager Tests ---------\n");
 
@@ -236,6 +240,15 @@ int ruleLoadTests()
     return 0;
 }
 
+
+int rulePermsTests()
+{
+    if(ruleManager.hasPerms("notapath/notapath", "myuid", "rw")) return -3;
+    if(!ruleManager.hasPerms("users/myuid/test1", "myuid", "rw")) return -1;
+    if(ruleManager.hasPerms("users/notmyuid/test1", "myuid", "rw")) return -2;
+
+    return 0;
+}
 
 
 

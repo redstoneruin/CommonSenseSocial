@@ -46,8 +46,8 @@ typedef struct prereq_t {
 
 
 typedef struct rule_t {
-	int pathSize;
-	int numPathVars;
+	unsigned int pathSize;
+	unsigned int numPathVars;
 	char** collectionPath;
 	char** pathVariables;
 	prereq_s* prereq;
@@ -71,6 +71,7 @@ private:
 	int parsePrereq(char* buf, rule_s* rule);
 
 	void initRule(rule_s* rule);
+	void fillRulePath(rule_s* rule, std::vector<std::string> pathVector, std::vector<std::string> varVector);
 	void addPrereq(rule_s* rule, prereq_s* prereq);
 
 	bool isPathMatch(std::vector<std::string> pathVector, rule_s rule);

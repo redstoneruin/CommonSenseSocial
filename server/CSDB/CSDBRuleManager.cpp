@@ -93,11 +93,8 @@ bool CSDBRuleManager::hasPerms(const char* path, const char* uid, const char* pe
 	{
 		nextSep = pathString.find_first_of('/');
 
-		if(nextSep == 0) return false;
-
 		pathVector.push_back(pathString.substr(0,nextSep));
 
-		
 		if(nextSep == std::string::npos) break;
 
 		pathString = pathString.substr(nextSep+1);
@@ -107,7 +104,7 @@ bool CSDBRuleManager::hasPerms(const char* path, const char* uid, const char* pe
 	for(rule_s* rule : rules)
 	{
 		if(isPathMatch(pathVector, *rule)) {
-
+		
 		}
 	}
 
@@ -124,7 +121,25 @@ bool CSDBRuleManager::hasPerms(const char* path, const char* uid, const char* pe
  */
 bool CSDBRuleManager::isPathMatch(std::vector<std::string> pathVector, rule_s rule)
 {
-	return false;
+	int currentPathVar;
+
+
+	// check whether the path is shorter than the rule path
+	if(pathVector.size() < rule.pathSize) return false;
+
+
+	for(unsigned int i = 0; i < rule.pathSize; i++)
+	{
+		char* ruleName = rule.collectionPath[i];
+		std::string pathName = pathVector[i];
+
+		if(strcmp(ruleName, VARIABLE_STRING) == 0) continue;
+
+		if(pathName.compare(ruleName) != 0) return false;
+
+	}
+
+	return true;
 }
 
 
@@ -205,6 +220,8 @@ int CSDBRuleManager::parseMatch(FILE* file)
 
 		if(strchr(buf, '}') != nullptr) {
 			// found closing character, add to rules and return
+			fillRulePath(rule, pathVector, varVector);
+
 			rules.push_back(rule);
 			return 0;
 		}
@@ -213,6 +230,38 @@ int CSDBRuleManager::parseMatch(FILE* file)
 	free(rule);
 	return -1;
 }
+
+
+/**
+ * Fill a rule with the given path and path variables
+ * @param rule Pointer to rule to fill
+ * @param pathVector The vector for the path names in hierarchical order
+ * @param The path variables in hierarchical order
+ */
+void CSDBRuleManager::fillRulePath(rule_s* rule, std::vector<std::string> pathVector, std::vector<std::string> varVector)
+{
+	rule->pathSize = pathVector.size();
+	rule->numPathVars = varVector.size();
+
+	rule->collectionPath = (char**) malloc (sizeof(char*) * rule->pathSize);
+	rule->pathVariables = (char**) malloc (sizeof(char*) * rule->numPathVars);
+
+	// fill the arrays
+	for(unsigned int i = 0; i < rule->pathSize; i++) 
+	{
+		std::string str = pathVector[i];
+		rule->collectionPath[i] = (char*) malloc (sizeof(char) * (str.length() + 1));
+		strncpy(rule->collectionPath[i], str.c_str(), str.length()+1);
+	}
+
+	for(unsigned int i = 0; i < rule->numPathVars; i++) 
+	{
+		std::string str = varVector[i];
+		rule->pathVariables[i] = (char*) malloc (sizeof(char) * (str.length() + 1));
+		strncpy(rule->pathVariables[i], str.c_str(), str.length()+1);
+	}
+}
+
 
 
 /**
@@ -297,7 +346,7 @@ int CSDBRuleManager::parsePrereq(char* buf, rule_s* rule)
 
 	
 	// check variable types
-	for(int i = 0; i < rule->numPathVars && (!param1Valid || !param2Valid); i++) {
+	for(unsigned int i = 0; i < rule->numPathVars && (!param1Valid || !param2Valid); i++) {
 		if(!param1Valid && strcmp(rule->pathVariables[i], param1Buf) == 0) {
 			param1Valid = true;
 			prereq->param1.type = PATH_VAR;
