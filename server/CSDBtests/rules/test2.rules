@@ -1,0 +1,9 @@
+match
+users/{uid}: {
+	allow rw if uid == auth.uid
+}
+
+match
+public: {
+	allow rw
+}

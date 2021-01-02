@@ -59,9 +59,6 @@ int CSDBRuleManager::loadRules(const char* path)
 				fclose(file);
 				return ret;
 			}
-		} else {
-			fclose(file);
-			return -2;
 		}
 	}
 
@@ -300,6 +297,7 @@ int CSDBRuleManager::parseMatch(FILE* file)
 
 	while(true) 
 	{
+		unsigned long colonIndex;
 		nextSep = pathString.find_first_of('/');
 
 		// check if some name exists
@@ -321,11 +319,11 @@ int CSDBRuleManager::parseMatch(FILE* file)
 			}
 
 			varVector.push_back(newVar);
-		} else if(name.find_last_of(':') != std::string::npos){
-			pathVector.push_back(name.substr(0,name.length()-1));
+		} else if((colonIndex = name.find_last_of(':')) != std::string::npos) {
+			pathVector.push_back(name.substr(0,colonIndex));
 		} else {
 			pathVector.push_back(name);
-		} 
+		}
 
 		if(nextSep == std::string::npos) break;
 

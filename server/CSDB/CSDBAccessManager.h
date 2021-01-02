@@ -19,9 +19,9 @@ public:
 	CSDBAccessManager();
 	~CSDBAccessManager();
 
-	void addDB(const char* name);
+	int addDB(const char* name, const char* rulesFile);
 private:
 	std::vector<CSDB*> dbs;
 
-	CSDBRuleManager ruleManager;
+	std::vector<CSDBRuleManager*> rms;
 };

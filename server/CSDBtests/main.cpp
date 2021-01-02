@@ -31,6 +31,8 @@ int ownerAndPermsTests();
 int ruleLoadTests();
 int rulePermsTests();
 
+int dbCreationTests();
+
 
 
 void printResult(FILE* file, int result);
@@ -85,6 +87,15 @@ int main()
     printResult(stdout, rulePermsTests());
 
     printf("--------- End Rule Manager Tests ---------\n");
+
+    
+
+    printf("\n---------- Access Manager Tests ----------\n");
+
+    printf("Access manager db creation tests: ");
+    printResult(stdout, dbCreationTests());
+
+    printf("-------- End Access Manager Tests --------\n");
 
     printf("\n");
     db.dumpCollections(stdout);
@@ -235,7 +246,7 @@ int ownerAndPermsTests()
 int ruleLoadTests()
 {
     int ret;
-    if((ret = ruleManager.loadRules("rules/test1.rules")) != 0) return ret;
+    if((ret = ruleManager.loadRules("rules/test2.rules")) != 0) return ret;
 
     return 0;
 }
@@ -245,11 +256,22 @@ int rulePermsTests()
 {
     if(ruleManager.hasPerms("notapath/notapath", "myuid", "rw")) return -1;
     if(!ruleManager.hasPerms("users/myuid/test1", "myuid", "rw")) return -2;
-    if(ruleManager.hasPerms("users/notmyuid/test1", "myuid", "rw")) return -3;
+    if(!ruleManager.hasPerms("public/test1", "myuid", "rw")) return -3;
+    if(ruleManager.hasPerms("users/notmyuid/test1", "myuid", "rw")) return -4;
 
     return 0;
 }
 
+
+
+int dbCreationTests()
+{
+    int ret;
+    if((ret = accessManager.addDB("db1", "rules/test2.rules")) != 0) return ret;
+    if((ret = accessManager.addDB("db2", "rules/test2.rules")) != 0) return ret;
+
+    return 0;
+}
 
 
 void printResult(FILE* file, int result) 
