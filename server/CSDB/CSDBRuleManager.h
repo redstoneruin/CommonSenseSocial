@@ -5,6 +5,8 @@
  *
  * Definitions for database rule manager
  */
+#include "../definitions.h"
+
 #include <vector>
 #include <string>
 
@@ -61,7 +63,7 @@ public:
 
 	int loadRules(const char* path);
 
-	bool hasPerms(const char* path, const char* uid, const char* perms);
+	bool hasPerms(const char* path, request_info_s requestInfo);
 
 private:
 	std::vector<rule_s*> rules;
@@ -75,7 +77,7 @@ private:
 	void addPrereq(rule_s* rule, prereq_s* prereq);
 
 	bool isPathMatch(std::vector<std::string> pathVector, rule_s rule);
-	prereq_s* passesRule(rule_s rule, std::vector<std::string> pathVector, const char* uid);
+	prereq_s* passesRule(rule_s rule, std::vector<std::string> pathVector, request_info_s requestInfo);
 
 	unsigned int lookupPathVar(rule_s rule, const char* varName);
 };

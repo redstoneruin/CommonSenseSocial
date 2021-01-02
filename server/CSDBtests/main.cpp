@@ -11,6 +11,8 @@
 #include "../CSDB/CSDBRuleManager.h"
 #include "../CSDB/CSDBAccessManager.h"
 
+#include "../definitions.h"
+
 CSDB db;
 CSDBRuleManager ruleManager;
 CSDBAccessManager accessManager;
@@ -32,6 +34,7 @@ int ruleLoadTests();
 int rulePermsTests();
 
 int dbCreationTests();
+int accessManagerCollectionTests();
 
 
 
@@ -78,6 +81,8 @@ int main()
 
     printf("------------- End CSDB Tests -------------\n");
 
+    
+
     printf("\n----------- Rule Manager Tests -----------\n");
 
     printf("Rule loading tests: ");
@@ -95,10 +100,13 @@ int main()
     printf("Access manager db creation tests: ");
     printResult(stdout, dbCreationTests());
 
+    printf("Access manager collection tests: ");
+    printResult(stdout, accessManagerCollectionTests());
+
     printf("-------- End Access Manager Tests --------\n");
 
-    printf("\n");
-    db.dumpCollections(stdout);
+    //printf("\n");
+    //db.dumpCollections(stdout);
 
 
     return 0;
@@ -254,13 +262,18 @@ int ruleLoadTests()
 
 int rulePermsTests()
 {
-    if(ruleManager.hasPerms("notapath/notapath", "myuid", "rw")) return -1;
-    if(!ruleManager.hasPerms("users/myuid/test1", "myuid", "rw")) return -2;
-    if(!ruleManager.hasPerms("public/test1", "myuid", "rw")) return -3;
-    if(ruleManager.hasPerms("users/notmyuid/test1", "myuid", "rw")) return -4;
+    request_info_s requestInfo;
+    requestInfo.uid = "myuid";
+    requestInfo.perms = "rw";
+
+    if(ruleManager.hasPerms("notapath/notapath", requestInfo)) return -1;
+    if(!ruleManager.hasPerms("users/myuid/test1", requestInfo)) return -2;
+    if(!ruleManager.hasPerms("public/test1", requestInfo)) return -3;
+    if(ruleManager.hasPerms("users/notmyuid/test1", requestInfo)) return -4;
 
     return 0;
 }
+
 
 
 
@@ -272,6 +285,15 @@ int dbCreationTests()
 
     return 0;
 }
+
+int accessManagerCollectionTests()
+{
+    int ret;
+
+    return 0;
+}
+
+
 
 
 void printResult(FILE* file, int result) 

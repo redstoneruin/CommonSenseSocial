@@ -8,8 +8,12 @@
 
 #include <vector>
 
+#include "../definitions.h"
+
 #include "CSDB.h"
 #include "CSDBRuleManager.h"
+
+
 
 /**
  * CSDBAccessManager class

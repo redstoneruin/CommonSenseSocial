@@ -74,7 +74,7 @@ int CSDBRuleManager::loadRules(const char* path)
  * @param perms The permissions wanted, contains 'w', 'r' or both
  * @return True if the user has access to the given path, false if does not
  */
-bool CSDBRuleManager::hasPerms(const char* path, const char* uid, const char* perms)
+bool CSDBRuleManager::hasPerms(const char* path, request_info_s requestInfo)
 {
 	unsigned long nextSep;
 	bool wantsRead, wantsWrite;
@@ -83,8 +83,8 @@ bool CSDBRuleManager::hasPerms(const char* path, const char* uid, const char* pe
 
 	wantsRead = wantsWrite = false;
 
-	if(strchr(perms, 'r') != nullptr) wantsRead = true;
-	if(strchr(perms, 'w') != nullptr) wantsWrite = true;
+	if(strchr(requestInfo.perms, 'r') != nullptr) wantsRead = true;
+	if(strchr(requestInfo.perms, 'w') != nullptr) wantsWrite = true;
 
 	while(true) 
 	{
@@ -101,7 +101,7 @@ bool CSDBRuleManager::hasPerms(const char* path, const char* uid, const char* pe
 	for(rule_s* rule : rules)
 	{
 		prereq_s* passedPrereq;
-		if((passedPrereq = passesRule(*rule, pathVector, uid)) != nullptr) {
+		if((passedPrereq = passesRule(*rule, pathVector, requestInfo)) != nullptr) {
 			if(wantsRead && wantsWrite) {
 				if(passedPrereq->read && passedPrereq->write) return true;
 			} else if(wantsRead && passedPrereq->read) {
@@ -122,7 +122,7 @@ bool CSDBRuleManager::hasPerms(const char* path, const char* uid, const char* pe
  * @param uid The current user's uid
  * @return The prereq that was passed, null if not
  */
-prereq_s* CSDBRuleManager::passesRule(rule_s rule, std::vector<std::string> pathVector, const char* uid)
+prereq_s* CSDBRuleManager::passesRule(rule_s rule, std::vector<std::string> pathVector, request_info_s requestInfo)
 {
 	if(!isPathMatch(pathVector, rule)) return nullptr;
 
@@ -154,7 +154,7 @@ prereq_s* CSDBRuleManager::passesRule(rule_s rule, std::vector<std::string> path
 			param1str = pathVector[lookupPathVar(rule, param1.value)].c_str();
 			break;
 		case PTYPE::AUTH_UID:
-			param1str = uid;
+			param1str = requestInfo.uid;
 			break;
 		default:
 			param1str = "";
@@ -172,7 +172,7 @@ prereq_s* CSDBRuleManager::passesRule(rule_s rule, std::vector<std::string> path
 			param2str = pathVector[lookupPathVar(rule, param2.value)].c_str();
 			break;
 		case PTYPE::AUTH_UID:
-			param2str = uid;
+			param2str = requestInfo.uid;
 			break;
 		default:
 			param2str = "";

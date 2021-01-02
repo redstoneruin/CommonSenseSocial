@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * Author: Ryan Steinwert
  * 
@@ -36,3 +38,13 @@
 
 #define MAX_COLLECTION_NAME_SIZE 64
 #define MAX_ITEM_NAME_SIZE 64
+
+
+
+/**
+ * Struct for database request info
+ */
+typedef struct request_info_t {
+	const char* uid;
+	const char* perms;
+} request_info_s;
