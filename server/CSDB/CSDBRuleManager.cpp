@@ -293,7 +293,7 @@ int CSDBRuleManager::parseMatch(FILE* file)
 	std::vector<std::string> varVector;
 
 	// first parse the match path
-	if(fgets(buf, PARSE_BUF_SIZE, file) == nullptr) return -1;
+	if(fgets(buf, PARSE_BUF_SIZE, file) == nullptr) return ERROR::PARSE;
 
 	std::string pathString(buf);
 
@@ -305,21 +305,21 @@ int CSDBRuleManager::parseMatch(FILE* file)
 		nextSep = pathString.find_first_of('/');
 
 		// check if some name exists
-		if(nextSep == 0) return -2;
+		if(nextSep == 0) return ERROR::PATH_INVAL;
 
 		std::string name = pathString.substr(0,nextSep);
 
 		// determine whether its a variable
 		if(pathString[0] == '{') {
 			// check if string is long enough for a variable
-			if(nextSep < 2) return -2;
+			if(nextSep < 2) return ERROR::PARSE;
 			
 			pathVector.push_back(std::string(VARIABLE_STRING));
 			std::string newVar = name.substr(1,name.find_last_of('}')-1);
 			
 			// check if variable exists already
 			for(std::string var : varVector) {
-				if(var.compare(newVar) == 0) return -4;
+				if(var.compare(newVar) == 0) return ERROR::PARSE;
 			}
 
 			varVector.push_back(newVar);
@@ -331,7 +331,7 @@ int CSDBRuleManager::parseMatch(FILE* file)
 
 		if(nextSep == std::string::npos) break;
 
-		if(nextSep+1 >= pathString.length()) return -2;
+		if(nextSep+1 >= pathString.length()) return ERROR::PARSE;
 
 		pathString = pathString.substr(nextSep+1);
 	}
@@ -368,7 +368,7 @@ int CSDBRuleManager::parseMatch(FILE* file)
 	if(rule->collectionPath != nullptr) free(rule->collectionPath);
 	if(rule->pathVariables != nullptr) free (rule->pathVariables);
 	free(rule);
-	return -1;
+	return ERROR::PARSE;
 }
 
 
@@ -432,12 +432,12 @@ int CSDBRuleManager::parsePrereq(char* buf, rule_s* rule)
 
 	if((ret = sscanf(buf, "%*s %2s %*s %64s %3s %64s", permsBuf, param1Buf, opBuf, param2Buf)) < 1) {
 		free(prereq);
-		return -1;
+		return ERROR::PARSE;
 	} else if(ret == 1) {
 		prereq->hasCheck = false;
 	} else if(ret < 4) {
 		free(prereq);
-		return -1;
+		return ERROR::PARSE;
 	} else {
 		prereq->hasCheck = true;
 	}
@@ -467,7 +467,7 @@ int CSDBRuleManager::parsePrereq(char* buf, rule_s* rule)
 	} else {
 		// invalid op, failure
 		free(prereq);
-		return -2;
+		return ERROR::PARSE;
 	}
 
 	param1Valid = param2Valid = false;
@@ -499,7 +499,7 @@ int CSDBRuleManager::parsePrereq(char* buf, rule_s* rule)
 		}
 	}
 
-	if(!param1Valid || !param2Valid) return -3;
+	if(!param1Valid || !param2Valid) return ERROR::PARAM_INVAL;
 
 	if(prereq->param1.type == PTYPE::STRING || prereq->param1.type == PTYPE::PATH_VAR) {
 

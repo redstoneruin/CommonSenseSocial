@@ -68,6 +68,7 @@ int CSDBAccessManager::addDB(const char* name, const char* rulesFile)
  * @param dbName The name of the database
  * @param path The path of the collection to add
  * @param requestInfo Info for this request
+ * @return 0 If collection successfully added or exists already, error code if not
  */
 int CSDBAccessManager::addCollection(const char* dbName, const char* path, request_info_s requestInfo)
 {
@@ -76,10 +77,10 @@ int CSDBAccessManager::addCollection(const char* dbName, const char* path, reque
 
 	requestInfo.perms = "w";
 
-	if(!getDBPair(dbName, &db, &rm)) return -1;
+	if(!getDBPair(dbName, &db, &rm)) return ERROR::NO_DB;
 
 	// check whether has access permissions
-	if(!rm->hasPerms(path, requestInfo)) return -2;
+	if(!rm->hasPerms(path, requestInfo)) return ERROR::NO_PERMS;
 
 
 	return db->addCollection(path);
@@ -101,9 +102,9 @@ int CSDBAccessManager::deleteCollection(const char* dbName, const char* path, re
 
 	requestInfo.perms = "w";
 
-	if(!getDBPair(dbName, &db, &rm)) return -1;
+	if(!getDBPair(dbName, &db, &rm)) return ERROR::NO_DB;
 
-	if(!rm->hasPerms(path, requestInfo)) return -2;
+	if(!rm->hasPerms(path, requestInfo)) return ERROR::NO_PERMS;
 
 	return db->deleteCollection(path);
 }
@@ -126,9 +127,9 @@ int CSDBAccessManager::replaceItem(const char* dbName, const char* path, request
 
 	requestInfo.perms = "w";
 
-	if(!getDBPair(dbName, &db, &rm)) return -1;
+	if(!getDBPair(dbName, &db, &rm)) return ERROR::NO_DB;
 
-	if(!rm->hasPerms(path, requestInfo)) return -2;
+	if(!rm->hasPerms(path, requestInfo)) return ERROR::NO_PERMS;
 
 	return db->replaceItem(path, text, requestInfo.uid, perm);
 }
@@ -190,9 +191,9 @@ int CSDBAccessManager::deleteItem(const char* dbName, const char* path, request_
 
 	requestInfo.perms = "w";
 
-	if(!getDBPair(dbName, &db, &rm)) return -1;
+	if(!getDBPair(dbName, &db, &rm)) return ERROR::NO_DB;
 
-	if(!rm->hasPerms(path, requestInfo)) return -2;
+	if(!rm->hasPerms(path, requestInfo)) return ERROR::NO_PERMS;
 
 	return db->deleteItem(path);
 }
@@ -212,9 +213,9 @@ bool CSDBAccessManager::collectionExists(const char* dbName, const char* path, r
 
 	requestInfo.perms = "r";
 
-	if(!getDBPair(dbName, &db, &rm)) return -1;
+	if(!getDBPair(dbName, &db, &rm)) return ERROR::NO_DB;
 
-	if(!rm->hasPerms(path, requestInfo)) return -2;
+	if(!rm->hasPerms(path, requestInfo)) return ERROR::NO_PERMS;
 
 	return db->collectionExists(path);
 }
@@ -234,9 +235,9 @@ bool CSDBAccessManager::itemExists(const char* dbName, const char* path, request
 
 	requestInfo.perms = "r";
 
-	if(!getDBPair(dbName, &db, &rm)) return -1;
+	if(!getDBPair(dbName, &db, &rm)) return ERROR::NO_DB;
 
-	if(!rm->hasPerms(path, requestInfo)) return -2;
+	if(!rm->hasPerms(path, requestInfo)) return ERROR::NO_PERMS;
 
 	return db->itemExists(path);
 }

@@ -107,14 +107,14 @@ int CSDB::loadDB(const char* collsFilename, unsigned int extraFlags)
 
     // should return without error, without message if file not found 
     if(fd == -1) {
-        return -1;
+        return ERROR::FILE_OPEN;
     }
 
     // open file in read only mode
     file = fdopen(fd, "r");
     if(file == nullptr) {
         fprintf(stderr, "Could not open collections file stream\n");
-        return -1;
+        return ERROR::FILE_OPEN;
     }
 
     // read through file parsing by whitespace
@@ -152,7 +152,7 @@ int CSDB::addCollection(const char* path)
     std::string pathstring(path);
     std::string formattedCollFilename(_dbDirname);
 
-    if(!validCollectionPath(path)) return -1;
+    if(!validCollectionPath(path)) return ERROR::PATH_INVAL;
 
     // check if collection already exists
     if(collectionExists(path)) return 0;
@@ -198,7 +198,7 @@ int CSDB::addCollection(const char* path)
     collection_s* parent = getCollection(parentPath.c_str());
 
     // ensure parent exists
-    if(parent == nullptr) return -2;
+    if(parent == nullptr) return ERROR::PARENT_COLL_INVAL;
 
     // look for child already existing
     for(int i = 0; i < parent->numSubColls; i++) {
@@ -239,7 +239,7 @@ int CSDB::deleteCollection(const char* path)
 {
     collection_s* toDelete = getCollection(path);
 
-    if(toDelete == nullptr) return -1;
+    if(toDelete == nullptr) return ERROR::PATH_INVAL;
 
     // delete from parent list
     if(toDelete->parent == nullptr) {
@@ -489,7 +489,7 @@ int CSDB::loadItem(item_s* item)
     pathString.append(item->name);
 
     fd = open(pathString.c_str(), O_RDONLY);
-    if(fd < 0) return -1;
+    if(fd < 0) return ERROR::FILE_OPEN;
 
     data = (char*) malloc (sizeof(char) * item->dataSize);
 
@@ -498,7 +498,7 @@ int CSDB::loadItem(item_s* item)
         
         if(ret != item->dataSize-1) {
             free(data);
-            return -2;
+            return ERROR::FILE_READ;
         }
 
         data[item->dataSize-1] = 0;
@@ -535,6 +535,7 @@ int CSDB::replaceItem(const char* path, const char* text, const char* owner, PER
 {
     size_t textLen;
     item_s* item;
+    int ret;
 
     if(!validItemPath(path)) return -1;
     
@@ -543,7 +544,7 @@ int CSDB::replaceItem(const char* path, const char* text, const char* owner, PER
     item = getNewItemStruct(path, owner, perm);
 
     if(item == nullptr) {
-        return -1;
+        return ERROR::ITEM_CREATE;
     }
 
     // set type and copy over test
@@ -554,10 +555,10 @@ int CSDB::replaceItem(const char* path, const char* text, const char* owner, PER
 
     item->dataSize = textLen + 1;
 
-    if(addItemToParent(item) != 0) return -2;
+    if((ret = addItemToParent(item)) != 0) return ret;
 
 
-    if(writeItem(item) != 0) return -3;
+    if((ret = writeItem(item)) != 0) return ret;
 
     return 0;
 
@@ -571,15 +572,15 @@ int CSDB::replaceItem(const char* path, const char* text, const char* owner, PER
  */
 int CSDB::deleteItem(const char* path)
 {
-    if(!validItemPath(path)) return -1;
+    if(!validItemPath(path)) return ERROR::PATH_INVAL;
 
     item_s* item = getItem(path);
 
-    if(item == nullptr) return -1;
+    if(item == nullptr) return ERROR::PATH_INVAL;
 
     collection_s* collection = (collection_s*)item->collection;
 
-    if(collection == nullptr) return -2;
+    if(collection == nullptr) return ERROR::PATH_INVAL;
 
     unsigned long long itemIndex;
 
@@ -644,7 +645,7 @@ int CSDB::getOwner(const char* path, void* buf, size_t bufSize)
 {
     item_s* item = getItem(path);
 
-    if(item == nullptr) return -1;
+    if(item == nullptr) return ERROR::PATH_INVAL;
 
     char* owner = item->owner;
 
@@ -669,7 +670,7 @@ int CSDB::getPerm(const char* path, PERM* permPointer)
 {
     item_s* item = getItem(path);
 
-    if(item == nullptr) return -1;
+    if(item == nullptr) return ERROR::PATH_INVAL;
 
     *permPointer = item->perm;
 
@@ -685,7 +686,7 @@ int CSDB::addItemToParent(item_s* item)
 {
     collection_s* parent = (collection_s*)item->collection;
 
-    if(parent == nullptr) return -1;
+    if(parent == nullptr) return ERROR::PATH_INVAL;
 
 
     std::string itemPath(parent->path);
@@ -791,14 +792,15 @@ item_s* CSDB::getNewItemStruct(const char* path, const char* owner, PERM perm)
  */
 int CSDB::writeItem(item_s* item) 
 {
+    int ret;
     FILE* file;
 
     // update manifest first
-    if(updateManifest((collection_s*)item->collection) != 0) return -1;
+    if((ret = updateManifest((collection_s*)item->collection)) != 0) return ret;
 
     collection_s* collection = (collection_s*)item->collection;
 
-    if(collection == nullptr) return -2;
+    if(collection == nullptr) return ERROR::PATH_INVAL;
 
     // get the path for the item
     std::string itemPath(collection->path);
@@ -808,7 +810,7 @@ int CSDB::writeItem(item_s* item)
     // write to a file
     file = fopen(itemPath.c_str(), "w+");
 
-    if(file == nullptr) return -3;
+    if(file == nullptr) return ERROR::FILE_OPEN;
 
     // determine how to write file based on type
     if(item->type == DTYPE::TEXT) {
@@ -829,7 +831,7 @@ int CSDB::updateManifest(collection_s* collection)
 {
     int manFile;
     
-    if(collection == nullptr) return -1;
+    if(collection == nullptr) return ERROR::COLL_INVAL;
 
     std::string manifestPathString(collection->path);
     manifestPathString.push_back('/');
@@ -837,7 +839,7 @@ int CSDB::updateManifest(collection_s* collection)
 
     manFile = open(manifestPathString.c_str(), O_WRONLY | O_TRUNC);
 
-    if(manFile < 0) return -2;
+    if(manFile < 0) return ERROR::FILE_OPEN;
 
     dprintf(manFile, "size:%llu", collection->numItems);
 
