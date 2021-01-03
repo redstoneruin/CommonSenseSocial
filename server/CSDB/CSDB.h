@@ -21,7 +21,7 @@ typedef struct item_t {
     bool loaded;
     void* collection;
     size_t dataSize;
-    char* data;
+    void* data;
 } item_s;
 
 typedef struct collection_t {

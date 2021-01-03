@@ -459,7 +459,7 @@ size_t CSDB::getItemData(const char* path, void* returnBuffer, DTYPE* type, size
     size_t i;
     for(i = offset; i < item->dataSize && (i-offset) < bufSize; i++) 
     {
-        buf[i-offset] = item->data[i];
+        buf[i-offset] = ((char*)item->data)[i];
     }
 
     *type = item->type;
@@ -477,7 +477,7 @@ int CSDB::loadItem(item_s* item)
 {
     int fd;
     size_t ret;
-    char* data;
+    void* data;
     collection_s* parent = (collection_s*)item->collection;
 
     if(item == nullptr) return 0;
@@ -491,7 +491,7 @@ int CSDB::loadItem(item_s* item)
     fd = open(pathString.c_str(), O_RDONLY);
     if(fd < 0) return ERROR::FILE_OPEN;
 
-    data = (char*) malloc (sizeof(char) * item->dataSize);
+    data = (void*) malloc (sizeof(char) * item->dataSize);
 
     if(item->type == DTYPE::TEXT) {
         ret = read(fd, data, item->dataSize-1);
@@ -501,7 +501,7 @@ int CSDB::loadItem(item_s* item)
             return ERROR::FILE_READ;
         }
 
-        data[item->dataSize-1] = 0;
+        ((char*)data)[item->dataSize-1] = 0;
         item->data = data;
     }
 
@@ -549,9 +549,9 @@ int CSDB::replaceItem(const char* path, const char* text, const char* owner, PER
 
     // set type and copy over test
     item->type = DTYPE::TEXT;
-    item->data = (char*) malloc (sizeof(char) * (textLen + 1));
+    item->data = (void*) malloc (sizeof(char) * (textLen + 1));
     
-    strncpy(item->data, text, textLen + 1);
+    strncpy((char*)item->data, text, textLen + 1);
 
     item->dataSize = textLen + 1;
 
@@ -793,7 +793,7 @@ item_s* CSDB::getNewItemStruct(const char* path, const char* owner, PERM perm)
 int CSDB::writeItem(item_s* item) 
 {
     int ret;
-    FILE* file;
+    int fd;
 
     // update manifest first
     if((ret = updateManifest((collection_s*)item->collection)) != 0) return ret;
@@ -808,16 +808,17 @@ int CSDB::writeItem(item_s* item)
     itemPath.append(item->name);
 
     // write to a file
-    file = fopen(itemPath.c_str(), "w+");
+    fd = open(itemPath.c_str(), O_WRONLY | O_TRUNC | O_CREAT);
 
-    if(file == nullptr) return ERROR::FILE_OPEN;
+
+    if(fd < 0) return ERROR::FILE_OPEN;
 
     // determine how to write file based on type
     if(item->type == DTYPE::TEXT) {
-        fprintf(file, "%s", item->data);
+        if(write(fd, item->data, item->dataSize) == -1) return ERROR::FILE_WRITE;
     }
 
-    fclose(file);
+    close(fd);
 
     return 0;
 }
