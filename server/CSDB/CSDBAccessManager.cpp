@@ -198,6 +198,50 @@ int CSDBAccessManager::deleteItem(const char* dbName, const char* path, request_
 }
 
 
+/**
+ * Returns whether collection exists in the given db
+ * @param dbName The name of the database to check
+ * @param path The path of the collection
+ * @param requestInfo Info about this request
+ * @return True if the collection exists, false if does not, or error occured
+ */
+bool CSDBAccessManager::collectionExists(const char* dbName, const char* path, request_info_s requestInfo)
+{
+	CSDB* db;
+	CSDBRuleManager* rm;
+
+	requestInfo.perms = "r";
+
+	if(!getDBPair(dbName, &db, &rm)) return -1;
+
+	if(!rm->hasPerms(path, requestInfo)) return -2;
+
+	return db->collectionExists(path);
+}
+
+
+/**
+ * Returns whether item exists in the given db
+ * @param dbName The name of the database to check
+ * @param path The path of the item
+ * @param requestInfo Info about this request
+ * @return True if the item exists, false if does not, or error occured
+ */
+bool CSDBAccessManager::itemExists(const char* dbName, const char* path, request_info_s requestInfo)
+{
+	CSDB* db;
+	CSDBRuleManager* rm;
+
+	requestInfo.perms = "r";
+
+	if(!getDBPair(dbName, &db, &rm)) return -1;
+
+	if(!rm->hasPerms(path, requestInfo)) return -2;
+
+	return db->itemExists(path);
+}
+
+
 
 /**
  * Fills the db and rm pointers for the given db name

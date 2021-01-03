@@ -33,6 +33,9 @@ public:
 
 	size_t getItemData(const char* dbName, const char* path, request_info_s requestInfo, void* buf, DTYPE* type, size_t bufSize, size_t offset = 0);
 
+	bool collectionExists(const char* dbName, const char* path, request_info_s requestInfo);
+	bool itemExists(const char* dbName, const char* path, request_info_s requestInfo);
+
 private:
 	std::vector<CSDB*> dbs;
 

@@ -350,7 +350,10 @@ int accessManagerItemAdditionTests()
     requestInfo.uid = "myuid";
 
     if((ret = accessManager.replaceItem("db1", "users/myuid/text1", requestInfo, "A basic text item", PERM::PUBLIC)) != 0) return ret;
+    if(!accessManager.itemExists("db1", "users/myuid/text1", requestInfo)) return -10;
+
     if((ret = accessManager.replaceItem("db2", "users/myuid/text2", requestInfo, "A basic text item", PERM::PRIVATE)) != 0) return ret;
+    if(!accessManager.itemExists("db2", "users/myuid/text2", requestInfo)) return -20;
 
     return 0;
 }
