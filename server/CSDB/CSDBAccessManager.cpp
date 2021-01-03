@@ -76,9 +76,7 @@ int CSDBAccessManager::addCollection(const char* dbName, const char* path, reque
 
 	requestInfo.perms = "w";
 
-	getDBPair(dbName, &db, &rm);
-
-	if(db == nullptr || rm == nullptr) return -1;
+	if(!getDBPair(dbName, &db, &rm)) return -1;
 
 	// check whether has access permissions
 	if(!rm->hasPerms(path, requestInfo)) return -2;
@@ -103,9 +101,7 @@ int CSDBAccessManager::deleteCollection(const char* dbName, const char* path, re
 
 	requestInfo.perms = "w";
 
-	getDBPair(dbName, &db, &rm);
-
-	if(db == nullptr || rm == nullptr) return -1;
+	if(!getDBPair(dbName, &db, &rm)) return -1;
 
 	if(!rm->hasPerms(path, requestInfo)) return -2;
 
@@ -115,12 +111,60 @@ int CSDBAccessManager::deleteCollection(const char* dbName, const char* path, re
 
 
 /**
+ * Replace an item in the database
+ * @param dbName The name of the database to add to
+ * @param path The path of the item to replace
+ * @param text The text to add to the item
+ * @param requestInfo Info for this request
+ * @param perm The permission status to give this item
+ * @return 0 if successful, error code if not
+ */
+int CSDBAccessManager::replaceItem(const char* dbName, const char* path, const char* text, request_info_s requestInfo, PERM perm)
+{
+	CSDB* db;
+	CSDBRuleManager* rm;
+
+	requestInfo.perms = "w";
+
+	if(!getDBPair(dbName, &db, &rm)) return -1;
+
+	if(!rm->hasPerms(path, requestInfo)) return -2;
+
+	return db->replaceItem(path, text, requestInfo.uid, perm);
+}
+
+
+/**
+ * Delete item in database at a given path
+ * @param dbName The name of the database to delete from
+ * @param path The path of the item
+ * @param requestInfo Info about this request
+ * @return 0 if successful, error code if not
+ */
+int CSDBAccessManager::deleteItem(const char* dbName, const char* path, request_info_s requestInfo)
+{
+	CSDB* db;
+	CSDBRuleManager* rm;
+
+	requestInfo.perms = "w";
+
+	if(!getDBPair(dbName, &db, &rm)) return -1;
+
+	if(!rm->hasPerms(path, requestInfo)) return -2;
+
+	return db->deleteItem(path);
+}
+
+
+
+/**
  * Fills the db and rm pointers for the given db name
  * @param dbName The name of the database to retrieve
  * @param db Pointer to database pointer to fill
  * @param rm Pointer to rule manager pointer to fill
+ * @return True if successfully filled pointers, false if not
  */
-void CSDBAccessManager::getDBPair(const char* dbName, CSDB** db, CSDBRuleManager** rm)
+bool CSDBAccessManager::getDBPair(const char* dbName, CSDB** db, CSDBRuleManager** rm)
 {
 	char nameBuf[NAME_BUF_SIZE];
 
@@ -133,8 +177,9 @@ void CSDBAccessManager::getDBPair(const char* dbName, CSDB** db, CSDBRuleManager
 		if(strcmp(nameBuf, dbName) == 0) {
 			*db = dbs[i];
 			*rm = rms[i];
-			break;
+			return true;
 		}
 	}
 
+	return false;
 }

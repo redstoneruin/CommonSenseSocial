@@ -27,10 +27,14 @@ public:
 
 	int addCollection(const char* dbName, const char* path, request_info_s requestInfo);
 	int deleteCollection(const char* dbName, const char* path, request_info_s requestInfo);
+
+	int replaceItem(const char* dbName, const char* path, const char* text, request_info_s requestInfo, PERM perm = PERM::PRIVATE);
+	int deleteItem(const char* dbName, const char* path, request_info_s requestInfo);
+
 private:
 	std::vector<CSDB*> dbs;
 
 	std::vector<CSDBRuleManager*> rms;
 
-	void getDBPair(const char* dbName, CSDB** db, CSDBRuleManager** rm);
+	bool getDBPair(const char* dbName, CSDB** db, CSDBRuleManager** rm);
 };

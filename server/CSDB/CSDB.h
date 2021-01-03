@@ -5,25 +5,11 @@
  * Common Sense Database class definition
  */
 
+#include "../definitions.h"
+
 #include <stdio.h>
 #include <ftw.h>
 #include <time.h>
-
-enum PERM {
-    PRIVATE,
-    UNLISTED,
-    PUBLIC
-};
-
-enum DTYPE {
-    NONE,
-    TEXT,
-    IMAGE,
-    AUDIO,
-    VIDEO,
-    STREAM,
-    AUDIO_STREAM
-};
 
 typedef struct item_t {
     char* name;

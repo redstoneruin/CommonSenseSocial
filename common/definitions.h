@@ -41,6 +41,22 @@
 
 
 
+enum PERM {
+    PRIVATE,
+    UNLISTED,
+    PUBLIC
+};
+
+enum DTYPE {
+    NONE,
+    TEXT,
+    IMAGE,
+    AUDIO,
+    VIDEO,
+    STREAM,
+    AUDIO_STREAM
+};
+
 /**
  * Struct for database request info
  */

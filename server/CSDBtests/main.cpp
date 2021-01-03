@@ -36,6 +36,7 @@ int rulePermsTests();
 int dbCreationTests();
 int accessManagerCollectionAddTests();
 int accessManagerCollectionDeleteTests();
+int accessManagerItemAdditionTests();
 
 
 
@@ -98,14 +99,17 @@ int main()
 
     printf("\n---------- Access Manager Tests ----------\n");
 
-    printf("Access manager db creation tests: ");
+    printf("DB creation tests: ");
     printResult(stdout, dbCreationTests());
 
-    printf("Access manager collection add tests: ");
+    printf("Collection adding tests: ");
     printResult(stdout, accessManagerCollectionAddTests());
 
-    printf("Access manager collection delete tests: ");
+    printf("Collection delete tests: ");
     printResult(stdout, accessManagerCollectionDeleteTests());
+
+    printf("Item addition tests: ");
+    printResult(stdout, accessManagerItemAdditionTests());
 
     printf("-------- End Access Manager Tests --------\n");
 
@@ -329,6 +333,21 @@ int accessManagerCollectionDeleteTests()
 
     return 0;
 }
+
+
+int accessManagerItemAdditionTests()
+{
+    int ret;
+    request_info_s requestInfo;
+    requestInfo.uid = "myuid";
+
+    if((ret = accessManager.replaceItem("db1", "users/myuid/text1", "A basic text item", requestInfo, PERM::PUBLIC)) != 0) return ret;
+    if((ret = accessManager.replaceItem("db2", "users/myuid/text2", "A basic text item", requestInfo, PERM::PRIVATE)) != 0) return ret;
+
+    return 0;
+}
+
+
 
 
 
