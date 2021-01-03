@@ -355,6 +355,10 @@ int accessManagerItemAdditionTests()
     if((ret = accessManager.replaceItem("db2", "users/myuid/text2", requestInfo, "A basic text item", PERM::PRIVATE)) != 0) return ret;
     if(!accessManager.itemExists("db2", "users/myuid/text2", requestInfo)) return -20;
 
+    requestInfo.uid = "notmyuid";
+
+    if((ret = accessManager.replaceItem("db1", "user/myuid/text1", requestInfo, "A basic text item 2", PERM::PUBLIC)) == 0) return -3;
+
     return 0;
 }
 
@@ -371,6 +375,12 @@ int accessManagerItemRetrievalTests()
 
     if(accessManager.getItemData("db2", "users/myuid/text2", requestInfo, buf, &type, BUF_SIZE) == 0) return -2;
     if(strcmp(buf, "A basic text item") != 0) return -20;
+
+    // rule test
+    requestInfo.uid = "notmyuid";
+
+    if(accessManager.getItemData("db1", "users/myuid/text1", requestInfo, buf, &type, BUF_SIZE) == 0) return -3;
+    if(strcmp(buf, "A basic text item") != 0) return -30;
 
     return 0;
 }
