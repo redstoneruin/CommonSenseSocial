@@ -50,6 +50,8 @@ public:
     int deleteCollection(const char* path);
 
     int replaceItem(const char* path, const char* text, const char* owner = nullptr, PERM perm = PERM::PRIVATE);
+    int replaceItem(const char* path, const void* data, size_t dataSize, DTYPE type, const char* owner = nullptr, PERM perm = PERM::PRIVATE);
+
     int deleteItem(const char* path);
 
     int getOwner(const char* path, void* buf, size_t bufSize);

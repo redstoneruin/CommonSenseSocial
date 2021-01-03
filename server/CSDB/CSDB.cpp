@@ -555,13 +555,47 @@ int CSDB::replaceItem(const char* path, const char* text, const char* owner, PER
 
     item->dataSize = textLen + 1;
 
-    if((ret = addItemToParent(item)) != 0) return ret;
-
+    if((ret = addItemToParent(item)) != 0) {
+        if(item->data != nullptr) free(item->data);
+        free(item);
+        return ret;
+    }
 
     if((ret = writeItem(item)) != 0) return ret;
 
     return 0;
 
+}
+
+
+int CSDB::replaceItem(const char* path, const void* data, size_t dataSize, DTYPE type, const char* owner, PERM perm)
+{
+    int ret;
+    item_s* item;
+
+    if(!validItemPath(path)) return -1;
+
+    item = getNewItemStruct(path, owner, perm);
+
+    if(item == nullptr) {
+        return ERROR::ITEM_CREATE;
+    }
+
+    item->type = type;
+    item->data = (void*) malloc (dataSize);
+    item->dataSize = dataSize;
+
+    memcpy(item->data, data, dataSize);
+
+    if((ret = addItemToParent(item)) != 0) {
+        if(item->data != nullptr) free(item->data);
+        free(item);
+        return ret;        
+    }
+
+    if((ret = writeItem(item)) != 0) return ret;
+
+    return 0;
 }
 
 

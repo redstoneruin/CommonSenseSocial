@@ -194,6 +194,8 @@ int itemAdditionTests()
     if((ret = db.replaceItem("test1/item1", "A basic text item")) != 0) return ret;
     if((ret = db.replaceItem("test1/item2", "A basic text item")) != 0) return ret;
     if((ret = db.replaceItem("test3/item2", "A basic text item")) != 0) return ret;
+
+    if((ret = db.replaceItem("test3/item3", "A basic text item", 18, DTYPE::TEXT)) != 0) return ret;
     return 0;
 }
 
@@ -204,8 +206,9 @@ int itemExistanceTests()
     if(!db.itemExists("test1/item1")) return -2;
     if(!db.itemExists("test1/item2")) return -3;
     if(!db.itemExists("test3/item2")) return -4;
+    if(!db.itemExists("test3/item3")) return -5;
 
-    if(db.itemExists("test3/item10")) return -5;
+    if(db.itemExists("test3/item10")) return -6;
 
     return 0;
 }
@@ -238,6 +241,9 @@ int textItemRetrievalTests()
     
     if((ret = db.getItemData("test3/item2", buf, &type, BUF_SIZE)) == 0) return -2;
     if(strcmp("A basic text item", buf) != 0) return -11;
+
+    if((ret = db.getItemData("test3/item3", buf, &type, BUF_SIZE)) == 0) return -3;
+    if(strcmp("A basic text item", buf) != 0) return -12;
 
     return 0;
 }
