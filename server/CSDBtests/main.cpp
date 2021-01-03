@@ -375,6 +375,13 @@ int accessManagerItemRetrievalTests()
 
 int accessManagerItemDeletionTests()
 {
+    int ret;
+    request_info_s requestInfo;
+    requestInfo.uid = "myuid";
+
+    if((ret = accessManager.deleteItem("db1", "users/myuid/text1", requestInfo)) != 0) return ret;
+    if((ret = accessManager.deleteItem("db2", "users/myuid/text2", requestInfo)) != 0) return ret;
+
     return 0;
 }
 
