@@ -37,6 +37,8 @@ int dbCreationTests();
 int accessManagerCollectionAddTests();
 int accessManagerCollectionDeleteTests();
 int accessManagerItemAdditionTests();
+int accessManagerItemRetrievalTests();
+int accessManagerItemDeletionTests();
 
 
 
@@ -110,6 +112,12 @@ int main()
 
     printf("Item addition tests: ");
     printResult(stdout, accessManagerItemAdditionTests());
+
+    printf("Item retrieval tests: ");
+    printResult(stdout, accessManagerItemRetrievalTests());
+
+    printf("Item deletion tests: ");
+    printResult(stdout, accessManagerItemDeletionTests());
 
     printf("-------- End Access Manager Tests --------\n");
 
@@ -341,12 +349,34 @@ int accessManagerItemAdditionTests()
     request_info_s requestInfo;
     requestInfo.uid = "myuid";
 
-    if((ret = accessManager.replaceItem("db1", "users/myuid/text1", "A basic text item", requestInfo, PERM::PUBLIC)) != 0) return ret;
-    if((ret = accessManager.replaceItem("db2", "users/myuid/text2", "A basic text item", requestInfo, PERM::PRIVATE)) != 0) return ret;
+    if((ret = accessManager.replaceItem("db1", "users/myuid/text1", requestInfo, "A basic text item", PERM::PUBLIC)) != 0) return ret;
+    if((ret = accessManager.replaceItem("db2", "users/myuid/text2", requestInfo, "A basic text item", PERM::PRIVATE)) != 0) return ret;
 
     return 0;
 }
 
+
+int accessManagerItemRetrievalTests()
+{
+    char buf[BUF_SIZE];
+    DTYPE type;
+    request_info_s requestInfo;
+    requestInfo.uid = "myuid";
+
+    if(accessManager.getItemData("db1", "users/myuid/text1", requestInfo, buf, &type, BUF_SIZE) == 0) return -1;
+    if(strcmp(buf, "A basic text item") != 0) return -10;
+
+    if(accessManager.getItemData("db2", "users/myuid/text2", requestInfo, buf, &type, BUF_SIZE) == 0) return -2;
+    if(strcmp(buf, "A basic text item") != 0) return -20;
+
+    return 0;
+}
+
+
+int accessManagerItemDeletionTests()
+{
+    return 0;
+}
 
 
 

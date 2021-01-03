@@ -119,7 +119,7 @@ int CSDBAccessManager::deleteCollection(const char* dbName, const char* path, re
  * @param perm The permission status to give this item
  * @return 0 if successful, error code if not
  */
-int CSDBAccessManager::replaceItem(const char* dbName, const char* path, const char* text, request_info_s requestInfo, PERM perm)
+int CSDBAccessManager::replaceItem(const char* dbName, const char* path, request_info_s requestInfo, const char* text, PERM perm)
 {
 	CSDB* db;
 	CSDBRuleManager* rm;
@@ -131,6 +131,48 @@ int CSDBAccessManager::replaceItem(const char* dbName, const char* path, const c
 	if(!rm->hasPerms(path, requestInfo)) return -2;
 
 	return db->replaceItem(path, text, requestInfo.uid, perm);
+}
+
+
+
+/**
+ * Return the data of the item at a given path, should the user have access permissions
+ * @param dbName The name of the database
+ * @param path The path of the item to access
+ * @param requestInfo Info for the database request
+ * @param buf Buffer to store item data
+ * @param type Pointer to item type to store
+ * @param bufSize Maximum size to write to buffer
+ * @param offset Offset to open file at
+ * @return Number of bytes written if successfully, 0 if no bytes available or unsuccessful
+ */
+size_t CSDBAccessManager::getItemData(const char* dbName, const char* path, request_info_s requestInfo, void* buf, DTYPE* type, size_t bufSize, size_t offset)
+{
+	PERM perm;
+	char nameBuf[NAME_BUF_SIZE];
+	CSDB* db;
+	CSDBRuleManager* rm;
+
+	requestInfo.perms = "r";
+
+	if(!getDBPair(dbName, &db, &rm)) return 0;
+
+	if(!rm->hasPerms(path, requestInfo)) return 0;
+
+	if(!db->itemExists(path)) return 0;
+
+	// check the perm status of the item, and whether this is the owner
+	if(db->getPerm(path, &perm) != 0) return 0;
+
+
+	if(perm == PERM::PRIVATE) {
+		if(db->getOwner(path, nameBuf, NAME_BUF_SIZE) != 0) return 0;
+	
+		if(strcmp(requestInfo.uid, nameBuf) != 0) return 0;
+	}
+
+	return db->getItemData(path, buf, type, bufSize, offset);
+
 }
 
 
