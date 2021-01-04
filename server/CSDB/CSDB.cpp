@@ -1040,7 +1040,7 @@ void CSDB::setupCollectionManifest(collection_s* collection)
 
     if(fscanf(file, "%s", buf) < 1) {
         // write size 0 to manifest
-        fprintf(file, "size:0\n");
+        fprintf(file, "size:0 ");
         collection->numItems = 0;
         return;
 
@@ -1069,7 +1069,7 @@ void CSDB::setupCollectionManifest(collection_s* collection)
     {
         if(fscanf(file, "%s", buf) < 1) {
             // not enough items
-            fprintf(stderr, "Error: Not enough items in manifest at path: %s\n", manifestName.c_str());
+            fprintf(stderr, "Error: Not enough items in manifest at path: %s, buffer: %s\n", manifestName.c_str(), buf);
             fprintf(stderr, "Expected %llu items, got %llu\n", collection->numItems, i);
             exit(1);
         }
@@ -1077,7 +1077,6 @@ void CSDB::setupCollectionManifest(collection_s* collection)
 
         // parse the buffer
         item_s* item = (item_s*) malloc (sizeof(item_s));
-        fscanf(file, "%s", buf);
 
         item->loaded = false;
         item->collection = collection;
