@@ -29,6 +29,8 @@ public:
 	int deleteCollection(const char* dbName, const char* path, request_info_s requestInfo);
 
 	int replaceItem(const char* dbName, const char* path, request_info_s requestInfo, const char* text, PERM perm = PERM::PRIVATE);
+	int replaceItem(const char* dbName, const char* path, request_info_s requestInfo, const void* data, size_t dataSize, DTYPE type, PERM perm = PERM::PRIVATE);
+
 	int deleteItem(const char* dbName, const char* path, request_info_s requestInfo);
 
 	size_t getItemData(const char* dbName, const char* path, request_info_s requestInfo, void* buf, DTYPE* type, size_t bufSize, size_t offset = 0);

@@ -115,8 +115,8 @@ int CSDBAccessManager::deleteCollection(const char* dbName, const char* path, re
  * Replace an item in the database
  * @param dbName The name of the database to add to
  * @param path The path of the item to replace
- * @param text The text to add to the item
  * @param requestInfo Info for this request
+ * @param text The text to add to the item
  * @param perm The permission status to give this item
  * @return 0 if successful, error code if not
  */
@@ -134,7 +134,29 @@ int CSDBAccessManager::replaceItem(const char* dbName, const char* path, request
 	return db->replaceItem(path, text, requestInfo.uid, perm);
 }
 
+/**
+ * Replace an item using a general buffer and type
+ * @param dbName Name of the database to add to
+ * @param path The path of the item to replce
+ * @param requestInfo Info for this request
+ * @param data Data buffer to read from
+ * @param dataSize Size of data to write to item buffer in bytes
+ * @param type Type of the item
+ * @param perm The permission status to give this item
+ * @return 0 if successful, error code if not
+ */
+int CSDBAccessManager::replaceItem(const char* dbName, const char* path, request_info_s requestInfo, const void* data, size_t dataSize, DTYPE type, PERM perm)
+{
+	CSDB* db;
+	CSDBRuleManager* rm;
+	requestInfo.perms = "w";
 
+	if(!getDBPair(dbName, &db, &rm)) return ERROR::NO_DB;
+
+	if(!rm->hasPerms(path, requestInfo)) return ERROR::NO_PERMS;
+
+	return db->replaceItem(path, data, dataSize, type, requestInfo.uid, perm);
+}
 
 /**
  * Return the data of the item at a given path, should the user have access permissions
