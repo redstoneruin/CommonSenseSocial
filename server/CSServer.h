@@ -11,6 +11,8 @@
 
 #include <openssl/ssl.h>
 
+#include "SessionManager.h"
+
 
 typedef struct Thread {
     int cl;
@@ -28,6 +30,7 @@ public:
 
 
 private:
+
     int _numThreads;
     uint16_t _port;
 
@@ -39,6 +42,8 @@ private:
 
     // ssl context
     SSL_CTX* _ctx;
+
+    SessionManager sessionManager;
 
 
     void* start                         (void* arg);

@@ -1,9 +1,9 @@
 # Makefile for Common Sense Social server
 
-SOURCES		= main.cpp CSServer.cpp
-HEADERS		= CSServer.h definitions.h
+HEADERS		= CSServer.h SessionManager.h
+SOURCES		= $(HEADERS:.h=.cpp) main.cpp
 
-OBJECTS 	= main.o CSServer.o
+OBJECTS 	= main.o CSServer.o SessionManager.o
 TARGET		= csServer
 
 COMPILE 	= clang++ -std=gnu++2a -I../lib/openssl/include -Wall -Wextra -Wpedantic -Wshadow -g -Og -c
