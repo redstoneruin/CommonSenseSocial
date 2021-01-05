@@ -9,27 +9,16 @@
 
 #include <ftw.h>
 
-#include "../definitions.h"
+#include "Item.h"
 
-typedef struct item_t {
-    char* name;
-    char* owner;
-    PERM perm;
-    DTYPE type;
-    time_t createdTime;
-    time_t modifiedTime;
-    bool loaded;
-    void* collection;
-    size_t dataSize;
-    void* data;
-} item_s;
+#include "../definitions.h"
 
 typedef struct collection_t {
     int numSubColls;
     unsigned long long numItems;
     char* name;
     char* path;
-    item_s** items;
+    Item** items;
     collection_t** subCollections;
     collection_t* parent;
 } collection_s;
@@ -50,8 +39,8 @@ public:
     collection_s* getCollection(const char* path);
 
     // item helpers
-    item_s* getItem(const char* path);
-    item_s* getItemFromCollection(collection_s* collection, const char* name);
+    Item* getItem(const char* path);
+    Item* getItemFromCollection(collection_s* collection, const char* name);
 
     int replaceItem(const char* path, const char* text, const char* owner = nullptr, PERM perm = PERM::PRIVATE);
     int replaceItem(const char* path, const void* data, size_t dataSize, DTYPE type, const char* owner = nullptr, PERM perm = PERM::PRIVATE);
@@ -64,8 +53,8 @@ public:
     size_t getItemData(const char* path, void* returnBuffer, DTYPE* type, size_t bufSize, size_t offset = 0);
 
 
-    int loadItem(item_s* item);
-    void unloadItem(item_s* item);
+    int loadItem(Item* item);
+    void unloadItem(Item* item);
 
     void dumpCollections(FILE* file);
 
@@ -81,9 +70,8 @@ private:
 	void createFormattedCollectionsFile(const char* formattedCollFilename);
 
 
-    item_s* getNewItemStruct(const char* path, const char* owner, PERM perm);
-    int addItemToParent(item_s* item);
-    int writeItem(item_s* item);
+    int addItemToParent(Item* item);
+    int writeItem(Item* item);
     int updateManifest(collection_s* collection);
 
     // recursive helpers

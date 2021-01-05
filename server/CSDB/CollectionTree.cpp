@@ -16,6 +16,7 @@
 #include <vector>
 #include <cstring>
 #include <cstdlib>
+#include <cstdio>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -25,7 +26,7 @@
 
 #include "CollectionTree.h"
 
-#include "../definitions.h"
+#define BUF_SIZE 4096
 
 
 
@@ -175,7 +176,7 @@ void CollectionTree::setupCollectionManifest(collection_s* collection)
     // set num items to whats in the manifest
     collection->numItems = atoll(buf + colonIndex + 1);
 
-    collection->items = (item_s**) malloc (sizeof(item_s*) * collection->numItems);
+    collection->items = (Item**) malloc (sizeof(Item*) * collection->numItems);
 
 
     // TODO: add items to collection
@@ -188,12 +189,15 @@ void CollectionTree::setupCollectionManifest(collection_s* collection)
             exit(1);
         }
 
+        Item* item;
+        const char* name;
+        const char* owner;
+        PERM perm;
+        DTYPE type;
+        size_t dataSize;
+        time_t createdTime;
+        time_t modifiedTime;
 
-        // parse the buffer
-        item_s* item = (item_s*) malloc (sizeof(item_s));
-
-        item->loaded = false;
-        item->collection = collection;
 
         // break buf into seperate strings at seperators
         for(unsigned long j = 0; j < sizeof(buf); j++) 
@@ -209,44 +213,46 @@ void CollectionTree::setupCollectionManifest(collection_s* collection)
 
         len = strlen(buf);
 
-        item->name = (char*) malloc (sizeof(char) * (len + 1));
-        strncpy(item->name, buf, len);
-        item->name[len] = 0;
+        // get name from start of buf
+        name = buf;
 
         startIndex = len + 1;
 
         len = strlen(buf + startIndex);
 
         if(len == 0) {
-            item->owner = nullptr;
+            owner = nullptr;
         } else {
-            item->owner = (char*) malloc (sizeof(char) * (len + 1));
-            strncpy(item->owner, buf + startIndex, len);
-            item->owner[len] = 0;
+        	owner = buf + startIndex;
         }
 
         startIndex += len + 1;
 
         len = strlen(buf + startIndex);
-        item->perm = (PERM)atoi(buf + startIndex);
+        perm = (PERM)atoi(buf + startIndex);
 
         startIndex += len + 1;
 
         len = strlen(buf + startIndex);
-        item->type = (DTYPE)atoi(buf + startIndex);
+        type = (DTYPE)atoi(buf + startIndex);
 
         startIndex += len + 1;
 
         len = strlen(buf + startIndex);
-        item->createdTime = atol(buf + startIndex);
+        createdTime = atol(buf + startIndex);
 
         startIndex += len + 1;
 
         len = strlen(buf + startIndex);
-        item->modifiedTime = atol(buf + startIndex);
+        modifiedTime = atol(buf + startIndex);
 
         startIndex += len + 1;
-        item->dataSize = atol(buf + startIndex);
+        dataSize = atol(buf + startIndex);
+
+
+        item = new Item(name, owner, perm, type, collection, dataSize);
+        item->setCreatedTime(createdTime);
+        item->setModifiedTime(modifiedTime);
 
         collection->items[i] = item;
 
@@ -561,30 +567,30 @@ collection_s* CollectionTree::getCollection(const char* path)
 int CollectionTree::replaceItem(const char* path, const char* text, const char* owner, PERM perm)
 {
     size_t textLen;
-    item_s* item;
+    Item* item;
+    collection_s* parent;
     int ret;
+    const char* name;
+    std::string parentPath(path);
 
-    if(!validItemPath(path)) return -1;
-    
+    if(!validItemPath(path)) return ERROR::PATH_INVAL;
+
+    name = strrchr(path, '/');
+    if(name == nullptr) return ERROR::PATH_INVAL;
+
+    parentPath = parentPath.substr(0, name - path);
+
+    name++;
+
+    // find parent collection
+    parent = getCollection(parentPath.c_str());
+    if(parent == nullptr) return ERROR::PATH_INVAL;
+
+
     textLen = strlen(text);
-
-    item = getNewItemStruct(path, owner, perm);
-
-    if(item == nullptr) {
-        return ERROR::ITEM_CREATE;
-    }
-
-    // set type and copy over test
-    item->type = DTYPE::TEXT;
-    item->data = (void*) malloc (sizeof(char) * (textLen + 1));
-    
-    strncpy((char*)item->data, text, textLen + 1);
-
-    item->dataSize = textLen + 1;
-
+    item = new Item(name, owner, perm, DTYPE::TEXT, parent, text, textLen+1);
     if((ret = addItemToParent(item)) != 0) {
-        if(item->data != nullptr) free(item->data);
-        free(item);
+    	delete item;
         return ret;
     }
 
@@ -608,25 +614,29 @@ int CollectionTree::replaceItem(const char* path, const char* text, const char* 
 int CollectionTree::replaceItem(const char* path, const void* data, size_t dataSize, DTYPE type, const char* owner, PERM perm)
 {
     int ret;
-    item_s* item;
+    Item* item;
+    collection_s* parent;
+    const char* name;
+    std::string parentPath(path);
 
     if(!validItemPath(path)) return -1;
 
-    item = getNewItemStruct(path, owner, perm);
+    name = strrchr(path, '/');
+    if(name == nullptr) return ERROR::PATH_INVAL;
 
-    if(item == nullptr) {
-        return ERROR::ITEM_CREATE;
-    }
+    parentPath = parentPath.substr(0, name - path);
 
-    item->type = type;
-    item->data = (void*) malloc (dataSize);
-    item->dataSize = dataSize;
+    name++;
 
-    memcpy(item->data, data, dataSize);
+
+    // find parent collection
+    parent = getCollection(parentPath.c_str());
+    if(parent == nullptr) return ERROR::PATH_INVAL;
+
+    item = new Item(name, owner, perm, type, parent, data, dataSize);
 
     if((ret = addItemToParent(item)) != 0) {
-        if(item->data != nullptr) free(item->data);
-        free(item);
+    	delete item;
         return ret;        
     }
 
@@ -645,23 +655,23 @@ int CollectionTree::deleteItem(const char* path)
 {
     if(!validItemPath(path)) return ERROR::PATH_INVAL;
 
-    item_s* item = getItem(path);
+    Item* item = getItem(path);
 
     if(item == nullptr) return ERROR::PATH_INVAL;
 
-    collection_s* collection = (collection_s*)item->collection;
+    collection_s* collection = (collection_s*)item->collection();
 
     if(collection == nullptr) return ERROR::PATH_INVAL;
 
     unsigned long long itemIndex;
 
-    item_s** oldList = collection->items;
-    item_s** newList = (item_s**) malloc (sizeof(item_s*) * (collection->numItems - 1));
+    Item** oldList = collection->items;
+    Item** newList = (Item**) malloc (sizeof(Item*) * (collection->numItems - 1));
 
     for(unsigned long long i = 0; i < collection->numItems; i++)
     {
-        item_s* currentItem = collection->items[i];
-        if(strcmp(currentItem->name, item->name) == 0)
+        Item* currentItem = collection->items[i];
+        if(strcmp(currentItem->name(), item->name()) == 0)
         {
             itemIndex = i;
             break;
@@ -694,9 +704,8 @@ int CollectionTree::deleteItem(const char* path)
 
     // free memory
     free(oldList);
-    free(item->name);
-    if(item->owner != nullptr) free(item->owner);
-    free(item);
+
+    delete item;
 
     updateManifest(collection);
 
@@ -709,7 +718,7 @@ int CollectionTree::deleteItem(const char* path)
  * @param path The path of the item
  * @return The pointer to the item if exists, null if does not
  */
-item_s* CollectionTree::getItem(const char* path)
+Item* CollectionTree::getItem(const char* path)
 {
     size_t sepIndex;
     collection_s* collection;
@@ -736,13 +745,13 @@ item_s* CollectionTree::getItem(const char* path)
  * @param collection The collection to search
  * @return The pointer to the item if exists, nullif does not
  */
-item_s* CollectionTree::getItemFromCollection(collection_s* collection, const char* name)
+Item* CollectionTree::getItemFromCollection(collection_s* collection, const char* name)
 {
     for(unsigned long long i = 0; i < collection->numItems; i++)
     {
-        item_s* item = collection->items[i];
+        Item* item = collection->items[i];
 
-        if(strcmp(item->name, name) == 0) return item;
+        if(strcmp(item->name(), name) == 0) return item;
     }
 
     return nullptr;
@@ -759,11 +768,11 @@ item_s* CollectionTree::getItemFromCollection(collection_s* collection, const ch
  */
 int CollectionTree::getOwner(const char* path, void* buf, size_t bufSize)
 {
-    item_s* item = getItem(path);
+    Item* item = getItem(path);
 
     if(item == nullptr) return ERROR::PATH_INVAL;
 
-    char* owner = item->owner;
+    char* owner = item->owner();
 
     if(owner == nullptr) {
         strncpy((char*)buf, "", bufSize);
@@ -784,11 +793,11 @@ int CollectionTree::getOwner(const char* path, void* buf, size_t bufSize)
  */
 int CollectionTree::getPerm(const char* path, PERM* permPointer)
 {
-    item_s* item = getItem(path);
+    Item* item = getItem(path);
 
     if(item == nullptr) return ERROR::PATH_INVAL;
 
-    *permPointer = item->perm;
+    *permPointer = item->perm();
 
     return 0;
 }
@@ -805,8 +814,9 @@ int CollectionTree::getPerm(const char* path, PERM* permPointer)
  */
 size_t CollectionTree::getItemData(const char* path, void* returnBuffer, DTYPE* type, size_t bufSize, size_t offset)
 {
-    item_s* item;
+    Item* item;
     char* buf = (char*)returnBuffer;
+    char* itemData;
 
     if(!validItemPath(path)) return 0;
 
@@ -816,17 +826,19 @@ size_t CollectionTree::getItemData(const char* path, void* returnBuffer, DTYPE* 
     if(item == nullptr) return 0;
 
     // load item into memory
-    if(!item->loaded && loadItem(item) != 0) return 0;
+    if(!item->loaded() && loadItem(item) != 0) return 0;
 
-    if(offset >= item->dataSize) return 0;
+    if(offset >= item->dataSize()) return 0;
+
+    itemData = (char*)item->data();
 
     size_t i;
-    for(i = offset; i < item->dataSize && (i-offset) < bufSize; i++) 
+    for(i = offset; i < item->dataSize() && (i-offset) < bufSize; i++) 
     {
-        buf[i-offset] = ((char*)item->data)[i];
+        buf[i-offset] = itemData[i];
     }
 
-    *type = item->type;
+    *type = item->type();
 
     return offset-i;
 }
@@ -836,41 +848,18 @@ size_t CollectionTree::getItemData(const char* path, void* returnBuffer, DTYPE* 
  * @param item Item to load
  * @return 0 if successful, error code if not
  */
-int CollectionTree::loadItem(item_s* item)
+int CollectionTree::loadItem(Item* item)
 {
-    int fd;
-    size_t ret;
-    void* data;
-    collection_s* parent = (collection_s*)item->collection;
+    collection_s* parent = (collection_s*)item->collection();
 
     if(item == nullptr) return 0;
 
-    if(item->loaded && item->data != nullptr) free(item->data);
-
     std::string pathString(parent->path);
     pathString.push_back('/');
-    pathString.append(item->name);
+    pathString.append(item->name());
 
-    fd = open(pathString.c_str(), O_RDONLY);
-    if(fd < 0) return ERROR::FILE_OPEN;
 
-    data = (void*) malloc (sizeof(char) * item->dataSize);
-
-    if(item->type == DTYPE::TEXT) {
-        ret = read(fd, data, item->dataSize-1);
-        
-        if(ret != item->dataSize-1) {
-            free(data);
-            return ERROR::FILE_READ;
-        }
-
-        ((char*)data)[item->dataSize-1] = 0;
-        item->data = data;
-    }
-
-    item->loaded = true;
-
-    return 0; 
+    return item->load(pathString.c_str()); 
 }
 
 
@@ -878,73 +867,13 @@ int CollectionTree::loadItem(item_s* item)
  * Unload an item from memory
  * @param item The item to unload
  */
-void CollectionTree::unloadItem(item_s* item)
+void CollectionTree::unloadItem(Item* item)
 {
     if(item == nullptr) return;
 
-    if(!item->loaded) return;
-
-    if(item->data != nullptr) free(item->data);
-
+    item->unload();
 }
 
-
-
-/**
- * Get and fill a new item struct with the given path
- * @param path The path of the item
- * @return 0 if successful, error code if not
- */
-item_s* CollectionTree::getNewItemStruct(const char* path, const char* owner, PERM perm)
-{
-    std::string pathstring(path);
-    std::string namestring;
-    collection_s* collection;
-    item_s* item;
-    size_t lastSep;
-
-    lastSep = pathstring.find_last_of('/');
-    if(lastSep == std::string::npos) {
-        return nullptr;
-    }
-
-    collection = getCollection(pathstring.substr(0, lastSep).c_str());
-
-    if(collection == nullptr) {
-        return nullptr;
-    }
-
-    // create the new item struct
-    item = (item_s*) malloc (sizeof(item_s));
-
-    namestring = pathstring.substr(lastSep+1);
-
-    // copy over name    
-    item->name = (char*) malloc (sizeof(char) * (namestring.size()+1));
-    strncpy(item->name, namestring.c_str(), namestring.size()+1);
-
-    item->owner = nullptr;
-
-    // copy over owner if exists    
-    if(owner != nullptr) {
-        int ownerLen = strlen(owner);
-        item->owner = (char*) malloc (sizeof(char) * (ownerLen + 1));
-        strncpy(item->owner, owner, ownerLen+1);
-    }
-
-    item->perm = perm;
-
-    item->loaded = false;
-    item->dataSize = 0;
-    item->data = nullptr;
-
-    item->collection = collection;
-
-    item->createdTime = time(nullptr);
-    item->modifiedTime = time(nullptr);
-
-    return item;
-}
 
 
 
@@ -953,35 +882,35 @@ item_s* CollectionTree::getNewItemStruct(const char* path, const char* owner, PE
  * @param item Item to add to its parent collection
  * @return 0 if successfully added, error code if not
  */
-int CollectionTree::addItemToParent(item_s* item)
+int CollectionTree::addItemToParent(Item* item)
 {
-    collection_s* parent = (collection_s*)item->collection;
+    collection_s* parent = (collection_s*)item->collection();
 
     if(parent == nullptr) return ERROR::PATH_INVAL;
 
 
     std::string itemPath(parent->path);
     itemPath.push_back('/');
-    itemPath.append(item->name);
+    itemPath.append(item->name());
 
 
     // check if already in list
     for(unsigned long long i = 0; i < parent->numItems; i++) 
     {
-        item_s* currentItem = parent->items[i];
+        Item* currentItem = parent->items[i];
         if(currentItem == item) {
             return 0;
-        } else if (strcmp(currentItem->name, item->name) == 0) {
+        } else if (strcmp(currentItem->name(), item->name()) == 0) {
             parent->items[i] = item;
-            free(currentItem);
+            delete currentItem;
             return 0;
         }
 
     }
 
     // add to list
-    item_s** oldlist = parent->items;
-    item_s** newlist = (item_s**) malloc (sizeof(item_s*) * (parent->numItems + 1));
+    Item** oldlist = parent->items;
+    Item** newlist = (Item**) malloc (sizeof(Item*) * (parent->numItems + 1));
     
     for(unsigned long long i = 0; i < parent->numItems; i++) 
     {
@@ -1004,37 +933,23 @@ int CollectionTree::addItemToParent(item_s* item)
  * @param item The item to write
  * @return 0 if successful, error code if not
  */
-int CollectionTree::writeItem(item_s* item) 
+int CollectionTree::writeItem(Item* item) 
 {
     int ret;
-    int fd;
 
     // update manifest first
-    if((ret = updateManifest((collection_s*)item->collection)) != 0) return ret;
+    if((ret = updateManifest((collection_s*)item->collection())) != 0) return ret;
 
-    collection_s* collection = (collection_s*)item->collection;
+    collection_s* collection = (collection_s*)item->collection();
 
     if(collection == nullptr) return ERROR::PATH_INVAL;
 
     // get the path for the item
     std::string itemPath(collection->path);
     itemPath.push_back('/');
-    itemPath.append(item->name);
+    itemPath.append(item->name());
 
-    // write to a file
-    fd = open(itemPath.c_str(), O_WRONLY | O_TRUNC | O_CREAT);
-
-
-    if(fd < 0) return ERROR::FILE_OPEN;
-
-    // determine how to write file based on type
-    if(item->type == DTYPE::TEXT) {
-        if(write(fd, item->data, item->dataSize) == -1) return ERROR::FILE_WRITE;
-    }
-
-    close(fd);
-
-    return 0;
+    return item->writeItem(itemPath.c_str());
 }
 
 
@@ -1062,15 +977,15 @@ int CollectionTree::updateManifest(collection_s* collection)
     // print info for each item
     for(unsigned long long i = 0; i < collection->numItems; i++) 
     {
-        item_s* item = collection->items[i];
+        Item* item = collection->items[i];
 
-        dprintf(manFile, " %s:%s:%d:%d:%ld:%ld:%lu",  item->name, 
-                                                    item->owner == nullptr ? "" : item->owner, 
-                                                    item->perm, 
-                                                    item->type,
-                                                    item->createdTime,
-                                                    item->modifiedTime,
-                                                    item->dataSize);
+        dprintf(manFile, " %s:%s:%d:%d:%ld:%ld:%lu",  item->name(), 
+                                                    item->owner() == nullptr ? "" : item->owner(), 
+                                                    item->perm(), 
+                                                    item->type(),
+                                                    item->createdTime(),
+                                                    item->modifiedTime(),
+                                                    item->dataSize());
     }
 
     close(manFile);
