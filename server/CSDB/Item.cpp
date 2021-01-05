@@ -15,32 +15,18 @@
 
 
 /**
- * Constructor for item type, sets instance variables
+ * Constructor for item type, sets instance variables and fills data field
  */
 Item::Item(const char* name, const char* owner, PERM perm, DTYPE type, void* collection, const void* dataBuf, size_t dataSize) :
-	_perm(perm),
-	_type(type),
-	_loaded(true),
-	_collection(collection),
-	_dataSize(dataSize),
-	_data(nullptr)
+	Item(name, owner, perm, type, collection, dataSize)
 {
-	int nameLen;
-
-	nameLen = strlen(name);
-
 	setData(dataBuf, dataSize);
-	setOwner(owner);
-
-	_createdTime = time(nullptr);
-	_modifiedTime = time(nullptr);
-
-	_name =	(char*) malloc (nameLen+1);
-
-	strncpy(_name, name, nameLen+1);
 }
 
 
+/**
+ * Constructor for item type with no data
+ */
 Item::Item(const char* name, const char* owner, PERM perm, DTYPE type, void* collection, size_t dataSize) :
 	_perm(perm),
 	_type(type),
@@ -70,7 +56,11 @@ Item::~Item()
 }
 
 
-
+/**
+ * Load item data from the file at given path
+ * @param path The path to load file from
+ * @return 0 if successful, error code if not
+ */
 int Item::load(const char* path)
 {	
 	int fd;
@@ -107,7 +97,9 @@ int Item::load(const char* path)
     return 0;
 }
 
-
+/**
+ * Unload the item data from this item
+ */
 void Item::unload()
 {
 	if(_data != nullptr) free(_data);
@@ -115,7 +107,11 @@ void Item::unload()
 }
 
 
-
+/**
+ * Write this item to the file at a given path
+ * @param path The path to write file to
+ * @return 0 if successful, error code if not
+ */
 int Item::writeItem(const char* path)
 {	
 	int fd;
