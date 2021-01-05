@@ -901,6 +901,7 @@ int CollectionTree::addItemToParent(Item* item)
         if(currentItem == item) {
             return 0;
         } else if (strcmp(currentItem->name(), item->name()) == 0) {
+            item->setCreatedTime(currentItem->createdTime());
             parent->items[i] = item;
             delete currentItem;
             return 0;
