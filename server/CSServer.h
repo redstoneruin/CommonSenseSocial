@@ -11,6 +11,7 @@
 
 #include <openssl/ssl.h>
 
+#include "CSDB/CSDBAccessManager.h"
 #include "SessionManager.h"
 
 
@@ -43,6 +44,7 @@ private:
     // ssl context
     SSL_CTX* _ctx;
 
+    CSDBAccessManager dbam; 
     SessionManager sessionManager;
 
 
