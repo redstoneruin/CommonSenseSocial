@@ -12,6 +12,7 @@
 SessionManager sm;
 
 int createTests();
+int deleteTests();
 
 void printResult(FILE* file, int testResult);
 
@@ -22,6 +23,9 @@ int main()
 
 	fprintf(out, "Session create tests: ");
 	printResult(out, createTests());
+
+	fprintf(out, "Session delete tests: ");
+	printResult(out, deleteTests());
 }
 
 int createTests()
@@ -47,6 +51,26 @@ int createTests()
 
 	return 0;
 
+}
+
+
+int deleteTests()
+{
+	uint32_t id1, id2;
+
+	id1 = sm.createSession();
+	id2 = sm.createSession();
+
+	if(!sm.getSession(id1)) return -1;
+	if(!sm.getSession(id2)) return -2;
+
+	if(sm.deleteSession(id1) != 0) return -3;
+	if(sm.deleteSession(id2) != 0) return -4;
+
+	if(sm.getSession(id1)) return -5;
+	if(sm.getSession(id2)) return -6;
+
+	return 0;
 }
 
 /**

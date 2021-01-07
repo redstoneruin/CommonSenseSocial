@@ -28,6 +28,8 @@ public:
 
 	session_s* getSession(uint32_t sessionId);
 
+	int deleteSession(uint32_t sessionId);
+
 private:
 	uint16_t _tableSize;
 	session_s** _table;
@@ -35,4 +37,6 @@ private:
 	uint16_t hash(uint32_t sessionId);
 
 	int insert(session_s* session);
+
+	void freeSession(session_s* session);
 };

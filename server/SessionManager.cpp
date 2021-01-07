@@ -113,6 +113,58 @@ session_s* SessionManager::getSession(uint32_t sessionId)
 	return slot;
 }
 
+/**
+ * Delete the session with the given id
+ * @param sessionId The id of the session to delete
+ * @return 0 if successfully deleted, error code if not
+ */
+int SessionManager::deleteSession(uint32_t sessionId)
+{
+	uint16_t slotPos = hash(sessionId);
+	session_s *slot, *prev;
+
+	prev = nullptr;
+	slot = _table[slotPos];
+
+	if(slot == nullptr) return ERROR::NO_SESSION;
+
+	while(slot != nullptr)
+	{
+		if(slot->id == sessionId) {
+			// found node, delete
+			if(prev == nullptr) {
+				_table[slotPos] = slot->next;
+				freeSession(slot);
+				return 0;
+			}
+
+			prev->next = slot->next;
+			freeSession(slot);
+			return 0;
+		}
+
+
+		prev = slot;
+		slot = slot->next;
+	}
+
+	return ERROR::NO_SESSION;
+}
+
+
+/**
+ * Free memory associated with session, including the pointer itself
+ * @param session Pointer to session to free
+ */
+void SessionManager::freeSession(session_s* session)
+{
+	if(session == nullptr) return;
+
+	if(session->uid != nullptr) free(session->uid);
+
+	free(session);
+}
+
 
 /**
  * Create a hash to the table size based on session id
