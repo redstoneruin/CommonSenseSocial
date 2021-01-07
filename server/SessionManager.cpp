@@ -21,6 +21,10 @@ SessionManager::SessionManager(uint16_t tableSize) :
 {
 	// create the table
 	_table = (session_s**) malloc (sizeof(session_s*) * _tableSize);
+	for(uint16_t i = 0; i < _tableSize; i++)
+	{
+		_table[i] = nullptr;
+	}
 }
 
 
@@ -103,6 +107,7 @@ session_s* SessionManager::getSession(uint32_t sessionId)
 	while(slot != nullptr)
 	{
 		if(slot->id == sessionId) break;
+		slot = slot->next;
 	}
 
 	return slot;
