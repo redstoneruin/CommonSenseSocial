@@ -30,6 +30,8 @@ public:
 
 	int deleteSession(uint32_t sessionId);
 
+	int replaceUid(uint32_t sessionId, const char* uid);
+
 private:
 	uint16_t _tableSize;
 	session_s** _table;

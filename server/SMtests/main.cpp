@@ -5,6 +5,7 @@
  */
 
 #include <cstdio>
+#include <cstring>
 
 
 #include "../SessionManager.h"
@@ -13,6 +14,7 @@ SessionManager sm;
 
 int createTests();
 int deleteTests();
+int uidTests();
 
 void printResult(FILE* file, int testResult);
 
@@ -26,6 +28,9 @@ int main()
 
 	fprintf(out, "Session delete tests: ");
 	printResult(out, deleteTests());
+
+	fprintf(out, "UID tests: ");
+	printResult(out, uidTests());
 }
 
 int createTests()
@@ -72,6 +77,32 @@ int deleteTests()
 
 	return 0;
 }
+
+
+
+int uidTests()
+{
+	uint32_t id1, id2;
+	session_s *sess1, *sess2;
+
+	id1 = sm.createSession();
+	id2 = sm.createSession();
+
+	if(sm.replaceUid(id1, "myuid1") != 0) return -3;
+	if(sm.replaceUid(id2, "myuid2") != 0) return -4;
+
+	sess1 = sm.getSession(id1);
+	sess2 = sm.getSession(id2);
+
+	if(strcmp(sess1->uid, "myuid1") != 0) return -5;
+	if(strcmp(sess2->uid, "myuid2") != 0) return -6;
+
+	sm.deleteSession(id1);
+	sm.deleteSession(id2);
+
+	return 0;
+}
+
 
 /**
  * Print success or FAILED based on given result of test

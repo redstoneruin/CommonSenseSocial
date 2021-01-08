@@ -8,6 +8,7 @@
 
 #include <cstdlib>
 #include <ctime>
+#include <cstring>
 
 #include <random>
 
@@ -95,6 +96,7 @@ int SessionManager::insert(session_s* session)
 	return 0;
 }
 
+
 /**
  * Get session from the hash table
  * @param sessionId The id to look for
@@ -112,6 +114,7 @@ session_s* SessionManager::getSession(uint32_t sessionId)
 
 	return slot;
 }
+
 
 /**
  * Delete the session with the given id
@@ -149,6 +152,31 @@ int SessionManager::deleteSession(uint32_t sessionId)
 	}
 
 	return ERROR::NO_SESSION;
+}
+
+
+/**
+ * Replace the uid for a session
+ * @param sessionId The id of the session to set uid
+ * @param uid The string of the uid to replace with
+ * @return 0 if successful, error code if not
+ */
+int SessionManager::replaceUid(uint32_t sessionId, const char* uid)
+{
+	int uidLen;
+	session_s* session = getSession(sessionId);
+
+	if(!session) return ERROR::NO_SESSION;
+
+	if(session->uid != nullptr) free(session->uid);
+
+	uidLen = strlen(uid);
+
+	session->uid = (char*) malloc (uidLen+1);
+
+	strncpy(session->uid, uid, uidLen+1);
+
+	return 0;
 }
 
 
