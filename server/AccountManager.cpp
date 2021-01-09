@@ -77,10 +77,41 @@ int AccountManager::insertAccount(const char* uid, const char* username, const c
  */
 int AccountManager::deleteAccount(const char* uid)
 {
+	uint16_t hashPos = elfHash(reinterpret_cast<const unsigned char*>(uid)) % _tableSize;
+
+	account_node_s* prev = nullptr;
+	account_node_s* slot = _table[hashPos];
+
+	if(slot == nullptr) return ERROR::NO_ACCOUNT;
+
+	while(slot != nullptr) {
+		if(strcmp(slot->uid, uid) == 0) break;
+		prev = slot;
+		slot = slot->next;
+	}
+
+	if(slot == nullptr) return ERROR::NO_ACCOUNT;
+
+	if(prev == nullptr) {
+		_table[hashPos] = slot->next;
+		freeNode(slot);
+		return 0;
+	}
+
+	prev->next = slot->next;
+	freeNode(slot);
+
 	return 0;
 }
 
 
+/**
+ * Get the username associated with a uid
+ * @param uid The uid to get username for
+ * @param buf The buffer to copy to
+ * @param bufSize Max size to copy to buffer
+ * @return 0 if successful, error code if not
+ */
 int AccountManager::getUsername(const char* uid, void* buf, size_t bufSize)
 {
 	account_node_s* node = getNode(uid);
@@ -91,6 +122,18 @@ int AccountManager::getUsername(const char* uid, void* buf, size_t bufSize)
 
 	return 0;
 }
+
+
+/**
+ * Returns whether the account exists
+ * @param uid The uid of the acccount
+ * @return True if exists, false if not
+ */
+bool AccountManager::accountExists(const char* uid)
+{
+	return getNode(uid);
+}
+
 
 /**
  * Return the node associated with the given user id

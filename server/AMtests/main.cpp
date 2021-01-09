@@ -15,6 +15,7 @@ AccountManager am;
 
 int insertTests();
 int retrievalTests();
+int deletionTests();
 
 void printResult(FILE* file, int testResult);
 
@@ -30,6 +31,9 @@ int main()
 
 	fprintf(out, "Account retrieval tests: ");
 	printResult(out, retrievalTests());
+
+	fprintf(out, "Account delete tests: ");
+	printResult(out, deletionTests());
 
 }
 
@@ -57,6 +61,18 @@ int retrievalTests()
 	return 0;
 }
 
+
+int deletionTests()
+{
+	int ret;
+	if((ret = am.deleteAccount("myuid1")) != 0) return ret;
+	if((ret = am.deleteAccount("myuid2")) != 0) return ret;
+
+	if(am.accountExists("myuid1")) return -1;
+	if(am.accountExists("myuid2")) return -2;
+
+	return 0;
+}
 
 /**
  * Print success or FAILED based on given result of test
