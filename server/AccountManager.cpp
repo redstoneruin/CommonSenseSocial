@@ -71,6 +71,50 @@ int AccountManager::insertAccount(const char* uid, const char* username, const c
 
 
 /**
+ * Delete the account associated with the uid
+ * @param uid The uid of the user to delete
+ * @return 0 if successfully deleted, 0 if not
+ */
+int AccountManager::deleteAccount(const char* uid)
+{
+	return 0;
+}
+
+
+int AccountManager::getUsername(const char* uid, void* buf, size_t bufSize)
+{
+	account_node_s* node = getNode(uid);
+
+	if(!node) return ERROR::NO_ACCOUNT;
+
+	strncpy((char*)buf, node->username, bufSize);
+
+	return 0;
+}
+
+/**
+ * Return the node associated with the given user id
+ * @param uid The user id
+ * @return The pointer to the account node, null if does not exist
+ */
+account_node_s* AccountManager::getNode(const char* uid)
+{
+	uint16_t hashPos = elfHash(reinterpret_cast<const unsigned char*>(uid)) % _tableSize;
+
+	account_node_s* slot = _table[hashPos];
+
+	if(!slot) return nullptr;
+
+	while(slot != nullptr) {
+		if(strcmp(slot->uid, uid) == 0) return slot;
+		slot = slot->next;
+	}
+
+	return nullptr;
+}
+
+
+/**
  * Insert user node into hash table
  * @param node The node to insert
  * @return 0 if successfully inserted, error code if not
@@ -88,12 +132,14 @@ int AccountManager::insertNode(account_node_s* node)
 
 	while(slot->next != nullptr) {
 		if(strcmp(slot->uid, node->uid) == 0) {
+			freeNode(node);
 			return ERROR::DUPLICATE_ACCOUNT;
 		}
 		slot = slot->next;
 	}
 
 	if(strcmp(slot->uid, node->uid) == 0) {
+		freeNode(node);
 		return ERROR::DUPLICATE_ACCOUNT;
 	}
 
@@ -103,6 +149,21 @@ int AccountManager::insertNode(account_node_s* node)
 }
 
 
+
+/**
+ * Free the memory associated with a node
+ * @param node The node to free
+ */
+void AccountManager::freeNode(account_node_s* node)
+{
+	if(!node) return;
+
+	if(node->uid) free(node->uid);
+	if(node->username) free(node->username);
+	if(node->email) free(node->email);
+	if(node->passhash) free (node->passhash);
+	free(node);
+}
 
 /**
  * Use PJW hash function to hash uids
