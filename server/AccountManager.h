@@ -22,6 +22,8 @@ public:
 	AccountManager(uint16_t tableSize);
 	~AccountManager();
 
+
+	int createAccount(const char* uid, const char* username, const char* email, const char* password);
 	int insertAccount(const char* uid, const char* username, const char* email, const char* passhash);
 	int deleteAccount(const char* uid);
 

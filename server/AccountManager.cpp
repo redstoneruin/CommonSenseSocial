@@ -37,6 +37,19 @@ AccountManager::~AccountManager()
 }
 
 
+
+/**
+ * Create a new account with random uid the hash of the given password, DOES NOT STORE PASSWORD
+ * @param username The username for the user
+ * @param email Email of the user
+ * @param password Password for the user, hashed before storing
+ */
+int AccountManager::createAccount(const char* username, const char* email, const char* password)
+{
+	return 0;
+}
+
+
 /**
  * Insert account information into the hash table
  * @param uid User id
