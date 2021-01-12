@@ -16,6 +16,7 @@ AccountManager am;
 int insertTests();
 int retrievalTests();
 int deletionTests();
+int additionTests();
 
 void printResult(FILE* file, int testResult);
 
@@ -35,6 +36,8 @@ int main()
 	fprintf(out, "Account delete tests: ");
 	printResult(out, deletionTests());
 
+	fprintf(out, "Account addition tests: ");
+	printResult(out, additionTests());
 }
 
 int insertTests()
@@ -70,6 +73,14 @@ int deletionTests()
 
 	if(am.accountExists("myuid1")) return -1;
 	if(am.accountExists("myuid2")) return -2;
+
+	return 0;
+}
+
+int additionTests()
+{
+	int ret;
+	if((ret = am.createAccount("myusername", "user1@gmail.com", "password")) != 0) return ret;
 
 	return 0;
 }

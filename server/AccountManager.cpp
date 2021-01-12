@@ -15,6 +15,11 @@
 #include "definitions.h"
 
 
+
+char validUidChars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-";
+
+
+
 AccountManager::AccountManager(uint16_t tableSize) :
 	_tableSize(tableSize),
 	_table(nullptr)
@@ -46,7 +51,46 @@ AccountManager::~AccountManager()
  */
 int AccountManager::createAccount(const char* username, const char* email, const char* password)
 {
+	int uidLen, usernameLen, emailLen, passwordLen, passhashLen;
+
+	uidLen = 64;
+
+	account_node_s* account = (account_node_s*) malloc (sizeof(account_node_s));
+
+	account->uid = genUid(uidLen);
+
+	//printf("Generated uid: %s\n", account->uid);
+
+
 	return 0;
+}
+
+
+
+/**
+ * Generate random uid of the specified length
+ * @param length The length of the uid
+ * @return A new random null-terminated uid stored in heap
+ */
+char* AccountManager::genUid(int length)
+{
+	char* ret = (char*) malloc (length+1);
+
+	std::default_random_engine e(r());
+
+	uint8_t numValidUidChars = sizeof(validUidChars)-1;
+
+	std::uniform_int_distribution<uint8_t> uniform_dist(0, numValidUidChars-1);
+
+	for(int i = 0; i < length; ++i)
+	{
+		ret[i] = validUidChars[uniform_dist(e)];
+	}
+
+	ret[length] = 0;
+
+	return ret;
+
 }
 
 

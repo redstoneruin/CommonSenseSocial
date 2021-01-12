@@ -1,3 +1,4 @@
+#pragma once
 /**
  * Author: Ryan Steinwert
  * 
@@ -6,6 +7,9 @@
 
 
 #include <cstdint>
+#include <random>
+
+
 
 typedef struct account_node_t {
 	char* uid;
@@ -23,7 +27,7 @@ public:
 	~AccountManager();
 
 
-	int createAccount(const char* uid, const char* username, const char* email, const char* password);
+	int createAccount(const char* username, const char* email, const char* password);
 	int insertAccount(const char* uid, const char* username, const char* email, const char* passhash);
 	int deleteAccount(const char* uid);
 
@@ -34,10 +38,14 @@ private:
 	uint16_t _tableSize;
 	account_node_s** _table;
 
+	std::random_device r;
+
 	int insertNode(account_node_s* node);
 	void freeNode(account_node_s* node);
 
 	account_node_s* getNode(const char* uid);
 
 	uint32_t elfHash(const unsigned char* ch);
+
+	char* genUid(int length);
 };

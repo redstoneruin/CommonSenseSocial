@@ -68,6 +68,7 @@ uint32_t SessionManager::createSession()
 
 
 
+
 /**
  * Insert a new session pointer into the session table
  * @param session The new session to insert
