@@ -76,6 +76,8 @@ int AccountManager::createAccount(const char* username, const char* email, const
 
 	//printf("Password hash: %s\n", account->passhash);
 
+	insertNode(account);
+
 	return 0;
 }
 
