@@ -8,8 +8,8 @@ OBJECTS = AccountManager.o main.o
 DEPS = $(OBJECTS:.o=.d)
 TARGET = AMtests
 
-COMPILE = clang++ -std=gnu++2a -Wall -Wextra -Wpedantic -Wshadow -g -Og -c
-LINK = clang++ -fstack-protector -m64 -o
+COMPILE = clang++ -std=gnu++2a -I../lib/openssl/include -Wall -Wextra -Wpedantic -Wshadow -g -Og -c
+LINK = clang++ -lssl -lcrypto -fstack-protector -m64 -o
 
 COPYCOMMON = cp ../../common/* ..
 

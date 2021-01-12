@@ -5,10 +5,13 @@
  */
 
 #define DEFAULT_TABLE_SIZE 64
+#define DEFAULT_UID_LEN 32
 
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+
+#include <openssl/sha.h>
 
 #include "AccountManager.h"
 
@@ -51,18 +54,74 @@ AccountManager::~AccountManager()
  */
 int AccountManager::createAccount(const char* username, const char* email, const char* password)
 {
-	int uidLen, usernameLen, emailLen, passwordLen, passhashLen;
+	int uidLen, usernameLen, emailLen, passwordLen;
 
-	uidLen = 64;
+	uidLen = DEFAULT_UID_LEN;
+	usernameLen = strlen(username);
+	emailLen = strlen(email);
+	passwordLen = strlen(password);
 
 	account_node_s* account = (account_node_s*) malloc (sizeof(account_node_s));
 
-	account->uid = genUid(uidLen);
+	account->uid = genRandString(uidLen);
+	account->username = (char*) malloc (usernameLen+1);
+	account->email = (char*) malloc (emailLen+1);
+
+	strncpy(account->username, username, usernameLen+1);
+	strncpy(account->email, email, emailLen+1);
 
 	//printf("Generated uid: %s\n", account->uid);
 
+	account->passhash = genHashString(password);
+
+	//printf("Password hash: %s\n", account->passhash);
 
 	return 0;
+}
+
+
+/**
+ * Return a sha-256 hex string based on string, with salt prepended
+ * @param s The string to hash
+ * @return New string on heap with randomly generated salt length 2 prepended
+ */
+char* AccountManager::genHashString(const char* s)
+{
+	int sLen, i;
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+	SHA256_CTX sha256;
+	SHA256_Init(&sha256);
+
+	sLen = strlen(s);
+
+
+	char* salt = genRandString(2);
+
+	char* ret = (char*) malloc (67);
+	
+	char* toHash = (char*) malloc (sLen+3);
+
+	strncpy(toHash, salt, 2);
+	strncpy(toHash+2, s, sLen+1);
+
+	// do the hash
+	SHA256_Update(&sha256, toHash, strlen(toHash));
+	SHA256_Final(hash, &sha256);
+	
+	strncpy(ret, toHash, 2);
+
+	for(i = 0; i < SHA256_DIGEST_LENGTH; ++i)
+	{
+		sprintf(ret + (i*2) + 2, "%02x", hash[i]);
+	}
+
+	ret[67] = 0;
+
+	free(salt);
+	free(toHash);
+
+	return ret;
+
 }
 
 
@@ -72,7 +131,7 @@ int AccountManager::createAccount(const char* username, const char* email, const
  * @param length The length of the uid
  * @return A new random null-terminated uid stored in heap
  */
-char* AccountManager::genUid(int length)
+char* AccountManager::genRandString(int length)
 {
 	char* ret = (char*) malloc (length+1);
 

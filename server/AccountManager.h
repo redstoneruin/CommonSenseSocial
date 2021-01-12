@@ -47,5 +47,7 @@ private:
 
 	uint32_t elfHash(const unsigned char* ch);
 
-	char* genUid(int length);
+	char* genRandString(int length);
+
+	char* genHashString(const char* s);
 };
