@@ -84,7 +84,8 @@ int AccountManager::createAccount(const char* username, const char* email, const
 
 	insertNode(account);
 
-	writeNewAccount(account);
+	//writeNewAccount(account);
+	writeAccounts();
 
 	return 0;
 }
@@ -147,8 +148,35 @@ void AccountManager::writeNewAccount(account_node_s* account)
 	file = fopen(ACCOUNTS_FILE, "a");
 
 	fprintf(file, "%s %s %s %s\n", account->uid, account->username, account->email, account->passhash);
+
+	fclose(file);
 }
 
+
+/**
+ * Write all accounts to the default accounts file
+ */
+void AccountManager::writeAccounts()
+{
+	FILE* file;
+	mkdir(ACCOUNTS_FOLDER, S_IRWXU);
+
+	file = fopen(ACCOUNTS_FILE, "w+");
+
+	for(uint16_t i = 0; i < _tableSize; ++i)
+	{
+		account_node_s* node = _table[i];
+		if(!node) continue;
+
+		while(node != nullptr) 
+		{
+			fprintf(file, "%s %s %s %s\n", node->uid, node->username, node->email, node->passhash);
+			node = node->next;
+		}
+	}
+
+	fclose(file);
+}
 
 
 /**

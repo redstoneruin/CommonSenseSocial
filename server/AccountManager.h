@@ -53,4 +53,5 @@ private:
 
 
 	void writeNewAccount(account_node_s* account);
+	void writeAccounts();
 };
