@@ -7,9 +7,14 @@
 #define DEFAULT_TABLE_SIZE 64
 #define DEFAULT_UID_LEN 32
 
+#define ACCOUNTS_FOLDER "accounts"
+#define ACCOUNTS_FILE "accounts/accounts"
+
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+
+#include <sys/stat.h>
 
 #include <openssl/sha.h>
 
@@ -73,10 +78,13 @@ int AccountManager::createAccount(const char* username, const char* email, const
 	//printf("Generated uid: %s\n", account->uid);
 
 	account->passhash = genHashString(password);
+	account->next = nullptr;
 
 	//printf("Password hash: %s\n", account->passhash);
 
 	insertNode(account);
+
+	writeNewAccount(account);
 
 	return 0;
 }
@@ -124,6 +132,21 @@ char* AccountManager::genHashString(const char* s)
 
 	return ret;
 
+}
+
+
+/**
+ * Append to account to file
+ * @param account The account to append to accounts file
+ */
+void AccountManager::writeNewAccount(account_node_s* account)
+{
+	FILE* file;
+	mkdir(ACCOUNTS_FOLDER, S_IRWXU);
+
+	file = fopen(ACCOUNTS_FILE, "a");
+
+	fprintf(file, "%s %s %s %s\n", account->uid, account->username, account->email, account->passhash);
 }
 
 

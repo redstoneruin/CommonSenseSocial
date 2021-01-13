@@ -50,4 +50,7 @@ private:
 	char* genRandString(int length);
 
 	char* genHashString(const char* s);
+
+
+	void writeNewAccount(account_node_s* account);
 };
