@@ -7,6 +7,9 @@
 #define DEFAULT_TABLE_SIZE 64
 #define DEFAULT_UID_LEN 32
 
+#define PARSE_BUF_SIZE 2048
+#define STR_BUF_SIZE 1024
+
 #define ACCOUNTS_FOLDER "accounts"
 #define ACCOUNTS_FILE "accounts/accounts"
 
@@ -32,11 +35,8 @@ AccountManager::AccountManager(uint16_t tableSize) :
 	_tableSize(tableSize),
 	_table(nullptr)
 {
-	_table = (account_node_s**) malloc (sizeof(account_node_s*) * tableSize);
-	for(int i = 0; i < tableSize; i++)
-	{
-		_table[i] = nullptr;
-	}
+	_table = (account_node_s**) calloc (tableSize, sizeof(account_node_s*));
+	loadAccounts();
 }
 
 
@@ -50,6 +50,50 @@ AccountManager::~AccountManager()
 }
 
 
+/**
+ * Load accounts from the accounts file
+ */
+void AccountManager::loadAccounts()
+{
+	FILE* file;
+	int uidLen, usernameLen, emailLen, passhashLen;
+	char parseBuf[PARSE_BUF_SIZE];
+	char uidBuf[STR_BUF_SIZE];
+	char usernameBuf[STR_BUF_SIZE];
+	char emailBuf[STR_BUF_SIZE];
+	char passhashBuf[STR_BUF_SIZE];
+
+	file = fopen(ACCOUNTS_FILE, "r");
+
+	if(!file) return;
+
+	while(fgets(parseBuf, PARSE_BUF_SIZE, file))
+	{
+		if(sscanf(parseBuf, "%s %s %s %s", uidBuf, usernameBuf, emailBuf, passhashBuf) < 4) continue;
+
+		account_node_s* account = (account_node_s*) malloc (sizeof(account_node_s));
+		
+		uidLen = strlen(uidBuf);
+		usernameLen = strlen(usernameBuf);
+		emailLen = strlen(emailBuf);
+		passhashLen = strlen(passhashBuf);
+
+		account->uid = (char*) malloc (uidLen+1);
+		account->username = (char*) malloc (usernameLen+1);
+		account->email = (char*) malloc (emailLen+1);
+		account->passhash = (char*) malloc (passhashLen+1);
+		account->next = nullptr;
+
+		strncpy(account->uid, uidBuf, uidLen+1);
+		strncpy(account->username, usernameBuf, usernameLen+1);
+		strncpy(account->email, emailBuf, emailLen+1);
+		strncpy(account->passhash, passhashBuf, passhashLen+1);
+
+		// insert
+		if(insertNode(account) != 0) freeNode(account);
+	}
+}
+
 
 /**
  * Create a new account with random uid the hash of the given password, DOES NOT STORE PASSWORD
@@ -59,7 +103,7 @@ AccountManager::~AccountManager()
  */
 int AccountManager::createAccount(const char* username, const char* email, const char* password)
 {
-	int uidLen, usernameLen, emailLen, passwordLen;
+	int uidLen, usernameLen, emailLen, passwordLen, ret;
 
 	uidLen = DEFAULT_UID_LEN;
 	usernameLen = strlen(username);
@@ -82,7 +126,10 @@ int AccountManager::createAccount(const char* username, const char* email, const
 
 	//printf("Password hash: %s\n", account->passhash);
 
-	insertNode(account);
+	if((ret = insertNode(account)) != 0) {
+		freeNode(account);
+		return ret;
+	}
 
 	//writeNewAccount(account);
 	writeAccounts();

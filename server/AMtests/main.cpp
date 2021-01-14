@@ -80,8 +80,7 @@ int deletionTests()
 int additionTests()
 {
 	int ret;
-	if((ret = am.createAccount("myusername", "user1@gmail.com", "password")) != 0) return ret;
-
+	ret = am.createAccount("myusername", "user1@gmail.com", "password");
 	return 0;
 }
 

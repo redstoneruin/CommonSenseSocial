@@ -43,6 +43,8 @@ private:
 	int insertNode(account_node_s* node);
 	void freeNode(account_node_s* node);
 
+	void loadAccounts();
+
 	account_node_s* getNode(const char* uid);
 
 	uint32_t elfHash(const unsigned char* ch);
