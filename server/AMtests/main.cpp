@@ -19,6 +19,7 @@ int insertTests();
 int retrievalTests();
 int deletionTests();
 int additionTests();
+int findTests();
 
 void printResult(FILE* file, int testResult);
 
@@ -40,6 +41,9 @@ int main()
 
 	fprintf(out, "Account addition tests: ");
 	printResult(out, additionTests());
+
+	fprintf(out, "Account find tests: ");
+	printResult(out, findTests());
 }
 
 int insertTests()
@@ -88,6 +92,23 @@ int additionTests()
 
 	return 0;
 }
+
+
+int findTests()
+{
+	int ret;
+	char buf1[512];
+	char buf2[512];
+	if((ret = am.getUidFromUsername("myusername", buf1, 512))) return ret;
+	if((ret = am.getUidFromEmail("user1@gmail.com", buf2, 512))) return ret;
+
+	if(strcmp(buf1, buf2)) return -10;
+
+	fprintf(out, "%s: ", buf1);
+
+	return 0;
+}
+
 
 /**
  * Print success or FAILED based on given result of test
