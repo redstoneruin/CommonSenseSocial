@@ -92,17 +92,7 @@ void AccountManager::loadAccounts()
 		// insert
 		if(insertNode(account) != 0) {
 			freeNode(account);
-		} else {
-			// add new info to the list
-			account_info_s* accountInfo;
-			accountInfo = (account_info_s*) malloc (sizeof(account_info_s));
-
-			accountInfo->username = account->username;
-			accountInfo->email = account->email;
-			accountInfo->uid = account->uid;
-
-			_infoList.push_back(accountInfo);
-		} 
+		}
 	}
 }
 
@@ -440,15 +430,22 @@ int AccountManager::insertNode(account_node_s* node)
 {
 	uint16_t hashPos = elfHash(reinterpret_cast<unsigned char*>(node->uid)) % _tableSize;
 
+	account_info_s* accountInfo = (account_info_s*) malloc(sizeof(account_info_s));
+	accountInfo->uid = node->uid;
+	accountInfo->email = node->email;
+	accountInfo->username = node->username;
+
 	account_node_s* slot = _table[hashPos];
 
 	if(!slot) {
 		_table[hashPos] = node;
+		_infoList.push_back(accountInfo);
 		return 0;
 	}
 
 	while(slot->next != nullptr) {
 		if(strcmp(slot->uid, node->uid) == 0) {
+			free(accountInfo);
 			freeNode(node);
 			return ERROR::DUPLICATE_ACCOUNT;
 		}
@@ -456,11 +453,13 @@ int AccountManager::insertNode(account_node_s* node)
 	}
 
 	if(strcmp(slot->uid, node->uid) == 0) {
+		free(accountInfo);
 		freeNode(node);
 		return ERROR::DUPLICATE_ACCOUNT;
 	}
 
-	slot->next = node; 
+	slot->next = node;
+	_infoList.push_back(accountInfo);
 
 	return 0;
 }
