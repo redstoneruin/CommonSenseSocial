@@ -117,6 +117,14 @@ int AccountManager::createAccount(const char* username, const char* email, const
 {
 	int uidLen, usernameLen, emailLen, passwordLen, ret;
 
+	// check whether account exists
+	for(auto accountInfo : _infoList)
+	{
+		if(!strcmp(accountInfo->username, username) || !strcmp(accountInfo->email, email)) {
+			return ERROR::DUPLICATE_ACCOUNT;
+		}
+	}
+
 	uidLen = DEFAULT_UID_LEN;
 	usernameLen = strlen(username);
 	emailLen = strlen(email);

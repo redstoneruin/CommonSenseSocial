@@ -10,7 +10,9 @@
 #include "../AccountManager.h"
 
 
+FILE* out;
 AccountManager am;
+
 
 
 int insertTests();
@@ -23,7 +25,7 @@ void printResult(FILE* file, int testResult);
 
 int main()
 {
-	FILE* out = stdout;
+	out = stdout;
 
 	fprintf(out, "-------- Account Manager Tests --------\n");
 
@@ -81,6 +83,9 @@ int additionTests()
 {
 	int ret;
 	ret = am.createAccount("myusername", "user1@gmail.com", "password");
+
+	fprintf(out, "Returned with [%d]: ", ret);
+
 	return 0;
 }
 
