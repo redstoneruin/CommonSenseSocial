@@ -37,6 +37,9 @@ public:
 	int insertAccount(const char* uid, const char* username, const char* email, const char* passhash);
 	int deleteAccount(const char* uid);
 
+	int getUidFromUsername(const char* username, void* buf, size_t bufSize);
+	int getUidFromEmail(const char* email, void* buf, size_t bufSize);
+
 	bool accountExists(const char* uid);
 	int getUsername(const char* uid, void* buf, size_t bufSize);
 

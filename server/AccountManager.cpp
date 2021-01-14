@@ -361,6 +361,44 @@ int AccountManager::getUsername(const char* uid, void* buf, size_t bufSize)
 
 
 /**
+ * Get uid from username, copy to buffer
+ * @param username Username to search for
+ * @param buf Buffer to copy to
+ * @param bufSize Max size for copy buffer
+ * @return 0 if successful, error code if not
+ */
+int AccountManager::getUidFromUsername(const char* username, void* buf, size_t bufSize)
+{
+	for(auto accountInfo : _infoList)
+	{
+		if(!strcmp(accountInfo->username, username)) {
+			strncpy((char*)buf, accountInfo->uid, bufSize);
+			return 0;
+		}
+	}
+	return ERROR::NO_ACCOUNT;
+}
+
+/**
+ * Get uid from email, copy to buffer
+ * @param username Email to search for
+ * @param buf Buffer to copy to
+ * @param bufSize Max size for copy buffer
+ * @return 0 if successful, error code if not
+ */
+int AccountManager::getUidFromEmail(const char* email, void* buf, size_t bufSize)
+{
+	for(auto accountInfo : _infoList)
+	{
+		if(!strcmp(accountInfo->email, email)) {
+			strncpy((char*)buf, accountInfo->uid, bufSize);
+			return 0;
+		}
+	}
+	return ERROR::NO_ACCOUNT;
+}
+
+/**
  * Returns whether the account exists
  * @param uid The uid of the acccount
  * @return True if exists, false if not
