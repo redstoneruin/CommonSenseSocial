@@ -8,7 +8,7 @@
 
 #include <cstdint>
 #include <random>
-
+#include <vector>
 
 
 typedef struct account_node_t {
@@ -18,6 +18,12 @@ typedef struct account_node_t {
 	char* passhash;
 	account_node_t* next;
 } account_node_s;
+
+typedef struct account_info_t {
+	char* username;
+	char* email;
+	char* uid;
+} account_info_s;
 
 
 class AccountManager {
@@ -37,6 +43,7 @@ public:
 private:
 	uint16_t _tableSize;
 	account_node_s** _table;
+	std::vector<account_info_s*> _infoList;
 
 	std::random_device r;
 

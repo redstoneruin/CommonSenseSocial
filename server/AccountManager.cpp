@@ -90,7 +90,19 @@ void AccountManager::loadAccounts()
 		strncpy(account->passhash, passhashBuf, passhashLen+1);
 
 		// insert
-		if(insertNode(account) != 0) freeNode(account);
+		if(insertNode(account) != 0) {
+			freeNode(account);
+		} else {
+			// add new info to the list
+			account_info_s* accountInfo;
+			accountInfo = (account_info_s*) malloc (sizeof(account_info_s));
+
+			accountInfo->username = account->username;
+			accountInfo->email = account->email;
+			accountInfo->uid = account->uid;
+
+			_infoList.push_back(accountInfo);
+		} 
 	}
 }
 
