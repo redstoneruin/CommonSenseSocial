@@ -400,6 +400,44 @@ bool AccountManager::accountExists(const char* uid)
 
 
 /**
+ * Attempt login and return the information associated with that account
+ * @param username Username associated with this account
+ * @param password The user's password
+ * @reutrn Struct containing the account information
+ */
+account_info_s AccountManager::login(const char* username, const char* password, int* error)
+{
+	account_info_s accountInfo;
+	account_info_s* infoPointer;
+
+	infoPointer = getAccountInfo(username);
+
+	if(!infoPointer) {
+		*error = NO_ACCOUNT;
+		return accountInfo;
+	}
+
+	return accountInfo;
+}
+
+/**
+ * Get account info associated with the given username
+ * @param username The username of the account
+ * @return The pointer of the account info struct, null if does not exist
+ */
+account_info_s* AccountManager::getAccountInfo(const char* username)
+{
+	for(auto accountInfo : _infoList)
+	{
+		if(!strcmp(accountInfo->username, username)) {
+			return accountInfo;
+		}
+	}
+	return nullptr;
+}
+
+
+/**
  * Return the node associated with the given user id
  * @param uid The user id
  * @return The pointer to the account node, null if does not exist
