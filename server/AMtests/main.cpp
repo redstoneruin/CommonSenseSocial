@@ -117,11 +117,15 @@ int findTests()
 int loginTests()
 {
 	int err;
-	account_info_s accountInfo;
+	account_info_s* accountInfo;
 
 	accountInfo = am.login("myusername", "password", &err);
 
-	if(err != 0) return err;
+	if(!accountInfo) return err;
+
+	if(strcmp(accountInfo->username, "myusername") != 0) return -10;
+	if(strcmp(accountInfo->email, "user1@gmail.com") != 0) return -20;
+	fprintf(out, "%s: ", accountInfo->uid);
 
 	return 0;
 }

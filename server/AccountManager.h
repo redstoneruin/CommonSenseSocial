@@ -43,7 +43,7 @@ public:
 	bool accountExists(const char* uid);
 	int getUsername(const char* uid, void* buf, size_t bufSize);
 
-	account_info_s login(const char* username, const char* password, int* error);
+	account_info_s* login(const char* username, const char* password, int* error);
 
 private:
 	uint16_t _tableSize;

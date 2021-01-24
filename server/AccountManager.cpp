@@ -165,7 +165,7 @@ char* AccountManager::genHashString(const char* s)
 
 	char* salt = genRandString(2);
 
-	char* ret = (char*) malloc (67);
+	char* ret = (char*) malloc (68);
 	
 	char* toHash = (char*) malloc (sLen+3);
 
@@ -203,14 +203,13 @@ bool AccountManager::matchPassWithHash(const char* password, const char* passhas
 {
 	int passLen, i;
 	unsigned char hash[SHA256_DIGEST_LENGTH];
+	char hashed[68];
 	SHA256_CTX sha256;
 	SHA256_Init(&sha256);
 
 	passLen = strlen(password);
 
 	char* toHash = (char*) malloc (passLen+3);
-
-	char* hashed = (char*) malloc (67);
 
 	strncpy(toHash, passhash, 2);
 	strncpy(toHash+2, password, passLen+1);
@@ -230,11 +229,9 @@ bool AccountManager::matchPassWithHash(const char* password, const char* passhas
 	free(toHash);
 
 	if(!strcmp(hashed, passhash)) {
-		free(hashed);
 		return true;
 	}
 
-	free(hashed);
 	return false;
 }
 
@@ -451,9 +448,8 @@ bool AccountManager::accountExists(const char* uid)
  * @param password The user's password
  * @reutrn Struct containing the account information
  */
-account_info_s AccountManager::login(const char* username, const char* password, int* error)
+account_info_s* AccountManager::login(const char* username, const char* password, int* error)
 {
-	account_info_s accountInfo;
 	account_info_s* infoPointer;
 	account_node_s* accountNode;
 
@@ -461,7 +457,7 @@ account_info_s AccountManager::login(const char* username, const char* password,
 
 	if(!infoPointer) {
 		*error = NO_ACCOUNT;
-		return accountInfo;
+		return nullptr;
 	}
 
 	// get the account node for the password hash
@@ -469,16 +465,16 @@ account_info_s AccountManager::login(const char* username, const char* password,
 
 	if(!accountNode) {
 		*error = NO_ACCOUNT;
-		return accountInfo;
+		return nullptr;
 	}
 
 	if(!matchPassWithHash(password, accountNode->passhash)) {
 		*error = BAD_LOGIN;
-		return accountInfo;
+		return nullptr;
 	}
 
-
-	return accountInfo;
+	*error = 0;
+	return infoPointer;
 }
 
 
