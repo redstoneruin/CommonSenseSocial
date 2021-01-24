@@ -9,16 +9,17 @@
 
 #define BASE 256
 
-#include <stdio.h>
 #include <err.h>
-#include <errno.h>
 #include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-#include <math.h>
 
 #include <thread>
+#include <iostream>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cmath>
 
 #include <netdb.h>
 #include <sys/socket.h>
@@ -28,6 +29,8 @@
 
 #include "CSServer.h"
 #include "definitions.h"
+
+using namespace std;
 
 
 /**
@@ -228,7 +231,7 @@ void CSServer::handleClient(Thread* thread)
         ERR_print_errors_fp(stderr);
     }
     else {
-        printf("SSL accepted\n");
+        cout << "SSL accepted" << endl;
         //SSL_write(thread->ssl, reply, strlen(reply));
     }
 
@@ -236,20 +239,27 @@ void CSServer::handleClient(Thread* thread)
     while(true) 
     {
         int bytesRead;
-        printf("Attempting read\n");
+        cout << "Attempting read" << endl;
         // Read from client until full tls record received
         if((bytesRead = SSL_read(thread->ssl, thread->threadBuf, DEFAULT_BUF_SIZE)) <= 0)
         {
-            fprintf(stderr, "Client %d exited\n", thread->cl);
+            cout << "Client " << thread->cl << " exited\n";
             break;
         }
 
         // pass bytes read to server
         //server.received_data((uint8_t*)thread->threadBuf, bytesRead);
         if(bytesRead > 0) {
-            printf("Received %d bytes from client %d\n", bytesRead, thread->cl);
-            char* message = getCStr(thread->threadBuf, bytesRead);
-            printf("Message: %s\n", message);
+            cout << "Received " << bytesRead << " bytes from client " << thread->cl << endl;
+            char* message = getCStr(thread->threadBuf, bytesRead);           
+            
+            // parse message
+            if(parseMessage(thread, message) != 0) {
+                cerr << "Received invalid message from client" << endl;
+                free(message);
+                break;
+            } 
+
             free(message);
         } 
 
@@ -257,6 +267,20 @@ void CSServer::handleClient(Thread* thread)
 
     SSL_shutdown(thread->ssl);
     SSL_free(thread->ssl);
+}
+
+
+/**
+ * Function for parsing and handling messages from client
+ * @param thread The thread managing the current client
+ * @param message The message received from the client
+ * @return 0 if successfully parsed and handled, error code if not
+ */
+int CSServer::parseMessage(Thread* thread, char* message)
+{
+
+
+    return 0;
 }
 
 

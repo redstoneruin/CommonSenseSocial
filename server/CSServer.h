@@ -13,6 +13,7 @@
 
 #include "CSDB/CSDBAccessManager.h"
 #include "SessionManager.h"
+#include "AccountManager.h"
 
 
 typedef struct Thread {
@@ -45,12 +46,15 @@ private:
     SSL_CTX* _ctx;
 
     CSDBAccessManager dbam; 
-    SessionManager sessionManager;
+    SessionManager _sm;
+    AccountManager _am;
 
 
     void* start                         (void* arg);
 
     void handleClient                   (Thread* thread);
+
+    int parseMessage                    (Thread* thread, char* message);
 
     int readBytes                       (int cl, char* buf, uint16_t size);
 
