@@ -409,6 +409,7 @@ account_info_s AccountManager::login(const char* username, const char* password,
 {
 	account_info_s accountInfo;
 	account_info_s* infoPointer;
+	account_node_s* accountNode;
 
 	infoPointer = getAccountInfo(username);
 
@@ -417,8 +418,37 @@ account_info_s AccountManager::login(const char* username, const char* password,
 		return accountInfo;
 	}
 
+	// get the account node for the password hash
+	accountNode = getNode(infoPointer->uid);
+
+	if(!accountNode) {
+		*error = NO_ACCOUNT;
+		return accountInfo;
+	}
+
+	if(!matchPassWithHash(password, accountNode->passhash)) {
+		*error = BAD_LOGIN;
+		return accountInfo;
+	}
+
+
 	return accountInfo;
 }
+
+
+/**
+ * Math the given password with the given hash
+ * @param password The password for the user
+ * @param hash The password hash for the user
+ * @return True if successfully matched, false if not
+ */
+bool AccountManager::matchPassWithHash(const char* password, const char* hash)
+{
+	
+
+	return false;
+}
+
 
 /**
  * Get account info associated with the given username

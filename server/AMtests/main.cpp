@@ -20,6 +20,7 @@ int retrievalTests();
 int deletionTests();
 int additionTests();
 int findTests();
+int loginTests();
 
 void printResult(FILE* file, int testResult);
 
@@ -44,6 +45,9 @@ int main()
 
 	fprintf(out, "Account find tests: ");
 	printResult(out, findTests());
+
+	fprintf(out, "Login tests: ");
+	printResult(out, loginTests());
 }
 
 int insertTests()
@@ -105,6 +109,19 @@ int findTests()
 	if(strcmp(buf1, buf2)) return -10;
 
 	fprintf(out, "%s: ", buf1);
+
+	return 0;
+}
+
+
+int loginTests()
+{
+	int err;
+	account_info_s accountInfo;
+
+	accountInfo = am.login("myusername", "password", &err);
+
+	if(err != 0) return err;
 
 	return 0;
 }
