@@ -194,6 +194,52 @@ char* AccountManager::genHashString(const char* s)
 
 
 /**
+ * Math the given password with the given hash
+ * @param password The password for the user
+ * @param hash The password hash for the user
+ * @return True if successfully matched, false if not
+ */
+bool AccountManager::matchPassWithHash(const char* password, const char* passhash)
+{
+	int passLen, i;
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+	SHA256_CTX sha256;
+	SHA256_Init(&sha256);
+
+	passLen = strlen(password);
+
+	char* toHash = (char*) malloc (passLen+3);
+
+	char* hashed = (char*) malloc (67);
+
+	strncpy(toHash, passhash, 2);
+	strncpy(toHash+2, password, passLen+1);
+
+	strncpy(hashed, toHash, 2);
+	 	
+	SHA256_Update(&sha256, toHash, strlen(toHash));
+	SHA256_Final(hash, &sha256);
+
+	for(i = 0; i < SHA256_DIGEST_LENGTH; ++i)
+	{
+		sprintf(hashed + (i*2) + 2, "%02x", hash[i]);
+	}
+
+	hashed[67] = 0;
+
+	free(toHash);
+
+	if(!strcmp(hashed, passhash)) {
+		free(hashed);
+		return true;
+	}
+
+	free(hashed);
+	return false;
+}
+
+
+/**
  * Append to account to file
  * @param account The account to append to accounts file
  */
@@ -435,19 +481,6 @@ account_info_s AccountManager::login(const char* username, const char* password,
 	return accountInfo;
 }
 
-
-/**
- * Math the given password with the given hash
- * @param password The password for the user
- * @param hash The password hash for the user
- * @return True if successfully matched, false if not
- */
-bool AccountManager::matchPassWithHash(const char* password, const char* hash)
-{
-	
-
-	return false;
-}
 
 
 /**

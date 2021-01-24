@@ -67,7 +67,7 @@ private:
 
 	account_info_s* getAccountInfo(const char* username);
 
-	bool matchPassWithHash(const char* password, const char* hash);
+	bool matchPassWithHash(const char* password, const char* passhash);
 
 	void writeNewAccount(account_node_s* account);
 	void writeAccounts();
