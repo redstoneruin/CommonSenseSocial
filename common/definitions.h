@@ -9,7 +9,9 @@
 /**
  * Server command identifiers
  */
-#define GET 0x1001
+#define GET_SESSION_ID 0x1001
+#define LOGIN 0x1002
+#define GET 0x2001
 
 /**
  * Server command flags
