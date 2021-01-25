@@ -18,6 +18,7 @@
 
 typedef struct Thread {
     int cl;
+    uint32_t session_id;
     sem_t mutex;
     SSL* ssl;
     char threadBuf[DEFAULT_BUF_SIZE];
@@ -58,6 +59,9 @@ private:
 
     int readBytes                       (int cl, char* buf, uint16_t size);
 
+    // command handlers
+    void handleGetSessionID             (Thread* thread);
+
     // functions for ssl
     void initOpenSSL                    ();
     void cleanupOpenSSL                 ();
@@ -71,5 +75,7 @@ private:
 
     uint64_t getInt                     (const char* src, uint16_t size);
     uint64_t getInt                     (const char* src, uint16_t start, uint16_t size);
+
+    void placeInt                       (void* buf, uint64_t value, uint16_t start, uint16_t size);
 
 };

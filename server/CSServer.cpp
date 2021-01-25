@@ -241,7 +241,7 @@ void CSServer::handleClient(Thread* thread)
         int bytesRead;
         cout << "Attempting read" << endl;
         // Read from client until full tls record received
-        if((bytesRead = SSL_read(thread->ssl, thread->threadBuf, DEFAULT_BUF_SIZE)) <= 0)
+        if((bytesRead = SSL_read(thread->ssl, thread->threadBuf, HEADER_SIZE)) <= 0)
         {
             cout << "Client " << thread->cl << " exited\n";
             break;
@@ -278,10 +278,39 @@ void CSServer::handleClient(Thread* thread)
  */
 int CSServer::parseMessage(Thread* thread, char* message)
 {
+    thread->session_id = getInt(thread->threadBuf, 0, 4);
+    uint16_t command = getInt(thread->threadBuf, 4, 2);
+    
+    uint8_t flags = (command & 0x0FF0) >> 4;
+    command = command & 0xF00F;
 
+    switch(command) {
+    case 0x1001:
+        handleGetSessionID(thread);
+        break;
+    default:
+        break;
+    }
 
     return 0;
 }
+
+
+/**
+ * Handle get session id command, establishes new session
+ * @param thread Thread requesting session ID
+ */
+void CSServer::handleGetSessionID(Thread* thread)
+{
+    char returnBuf[HEADER_SIZE];
+    thread->session_id = _sm.createSession();
+
+    placeInt(returnBuf, thread->session_id, 0, 4);
+    placeInt(returnBuf, GET_SESSION_ID, 4, 2);
+
+    SSL_write(thread->ssl, returnBuf, HEADER_SIZE);
+}
+
 
 
 /**
@@ -368,4 +397,22 @@ uint64_t CSServer::getInt(const char* src, uint16_t start, uint16_t size)
     }
 
     return result;
+}
+
+
+/**
+ * Place int into the given buffer
+ * @param buf Buffer to place into
+ * @param value Value to place
+ * @param start Start index for the int in the buffer
+ * @param size Size in bytes of int to place
+ */
+void CSServer::placeInt(void* buf, uint64_t value, uint16_t start, uint16_t size)
+{
+    char* buffer = (char*)buf;
+    for(int32_t i = start+size-1; i >= start; --i)
+    {
+        buffer[i] = (char)(value & 0xFF);
+        value = value >> 8; 
+    }
 }

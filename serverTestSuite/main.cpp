@@ -9,6 +9,8 @@
 #define DEFAULT_PORT 9251
 #define DEFAULT_BUF_SIZE 2048
 
+#define BASE 256
+
 #include <stdio.h>
 #include <netdb.h>
 #include <sys/socket.h>
@@ -17,6 +19,9 @@
 #include <vector>
 #include <unistd.h>
 #include <stdlib.h>
+#include <cmath>
+
+#include <iostream>
 
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
@@ -27,6 +32,7 @@
 #include "definitions.h"
 
 
+using namespace std;
 
 struct hostent *hent;
 struct sockaddr_in addr;
@@ -37,6 +43,8 @@ SSL* ssl;
 
 
 void printResult(int testResult);
+uint64_t getInt(const char* src, uint16_t start, uint16_t size);
+void placeInt(void* voidBuf, uint64_t value, uint16_t start, uint16_t size);
 
 
 int headerTest1();
@@ -156,11 +164,25 @@ int main(int argc, char* argv[])
 int headerTest1()
 {
    int written;
-   if((written = SSL_write(ssl, "testing", 7)) <= 0) {
+   char commandBuf[HEADER_SIZE];
+
+   placeInt(commandBuf, 0, 0, 4);
+   placeInt(commandBuf, GET_SESSION_ID, 4, 2);
+
+   if((written = SSL_write(ssl, commandBuf, HEADER_SIZE)) <= 0) {
       return -1;
    }
 
    printf("Wrote %d bytes: ", written);
+
+
+   int bytesRead = SSL_read(ssl, commandBuf, HEADER_SIZE);
+
+   if(bytesRead < HEADER_SIZE) return -2;
+
+
+
+   printf("%#lx: ", getInt(commandBuf, 0, 4));
 
    return 0;
 }
@@ -180,5 +202,45 @@ void printResult(int testResult)
         printf("success\n");
     } else {
         printf("FAILED: %d\n", testResult);
+    }
+}
+
+
+/**
+ * Returns the parsed integer from a given place in a source buffer
+ * @param src Buffer to read int from
+ * @param start Start index of int
+ * @param size Size of int in bytes
+ * @return The parsed int
+ */
+uint64_t getInt(const char* src, uint16_t start, uint16_t size)
+{
+    int place = 0;
+    uint64_t result = 0;
+    // go from back to front, add based on powers of 8
+    for(int i = (start+size)-1; i >= start; i--) {
+        uint8_t val = (uint8_t)src[i];
+        result += val * pow(BASE, place);
+        place++;
+    }
+
+    return result;
+}
+
+
+/**
+ * Place int into the given buffer
+ * @param buf Buffer to place into
+ * @param value Value to place
+ * @param start Start index for the int in the buffer
+ * @param size Size in bytes of int to place
+ */
+void placeInt(void* voidBuf, uint64_t value, uint16_t start, uint16_t size)
+{
+    char* buffer = (char*)voidBuf;
+    for(int32_t i = start+size-1; i >= start; --i)
+    {
+        buffer[i] = (char)(value & 0xFF);
+        value = value >> 8; 
     }
 }
