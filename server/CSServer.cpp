@@ -285,11 +285,14 @@ int CSServer::parseMessage(Thread* thread, char* message)
     command = command & 0xF00F;
 
     switch(command) {
-    case 0x1001:
+    case GET_SESSION_ID:
         handleGetSessionID(thread);
         break;
-    default:
+    case CREATE_ACCOUNT:
+        handleCreateAccount(thread);
         break;
+    default:
+        return -1;
     }
 
     return 0;
@@ -305,12 +308,70 @@ void CSServer::handleGetSessionID(Thread* thread)
     char returnBuf[HEADER_SIZE];
     thread->session_id = _sm.createSession();
 
-    placeInt(returnBuf, thread->session_id, 0, 4);
-    placeInt(returnBuf, GET_SESSION_ID, 4, 2);
+    placeInt(returnBuf, thread->session_id, 0, IDENT_SIZE);
+    placeInt(returnBuf, GET_SESSION_ID, IDENT_SIZE, COMMAND_SIZE);
 
     SSL_write(thread->ssl, returnBuf, HEADER_SIZE);
 }
 
+
+/**
+ * Handle creating account by server command
+ * @param thread Thread requesting account creation
+ */
+void CSServer::handleCreateAccount(Thread* thread)
+{
+    int err, bytesRead;
+    session_s* session;
+    char usernameBuf[LOGIN_ARG_SIZE];
+    char emailBuf[LOGIN_ARG_SIZE];
+    char passwordBuf[LOGIN_ARG_SIZE];
+
+    char returnBuf[HEADER_SIZE+ERR_CODE_SIZE];
+
+    err = 0;
+
+    if((bytesRead = SSL_read(thread->ssl, usernameBuf, LOGIN_ARG_SIZE)) < LOGIN_ARG_SIZE) {
+        err = ERROR::COMMAND_FORMAT;
+    }
+
+    if(!err && (bytesRead = SSL_read(thread->ssl, emailBuf, LOGIN_ARG_SIZE)) < LOGIN_ARG_SIZE) {
+        err = ERROR::COMMAND_FORMAT;
+    }
+
+    if(!err && (bytesRead = SSL_read(thread->ssl, passwordBuf, LOGIN_ARG_SIZE)) < LOGIN_ARG_SIZE) {
+        err = ERROR::COMMAND_FORMAT;
+    }
+
+    if(strlen(usernameBuf) >= LOGIN_ARG_SIZE
+        || strlen(emailBuf) >= LOGIN_ARG_SIZE
+        || strlen(passwordBuf) >= LOGIN_ARG_SIZE) {
+        err = ERROR::COMMAND_FORMAT;
+    }
+
+    placeInt(returnBuf, thread->session_id, 0, IDENT_SIZE);
+    placeInt(returnBuf, CREATE_ACCOUNT, IDENT_SIZE, COMMAND_SIZE);
+
+    if(!err) {
+        session = _sm.getSession(thread->session_id);
+        if(!session) err = ERROR::NO_SESSION;
+    }
+
+    // if format error, return before making account
+    if(err != 0) {
+        placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
+        SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+        return;
+    }
+
+
+
+    // create the account
+    err = _am.createAccount(usernameBuf, emailBuf, passwordBuf);
+
+    placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
+    SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+}
 
 
 /**

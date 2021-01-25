@@ -10,7 +10,8 @@
  * Server command identifiers
  */
 #define GET_SESSION_ID 0x1001
-#define LOGIN 0x1002
+#define CREATE_ACCOUNT 0x1002
+#define LOGIN 0x1003
 #define GET 0x2001
 
 /**
@@ -37,6 +38,8 @@
 #define HEADER_SIZE 6
 #define IDENT_SIZE 4
 #define COMMAND_SIZE 2
+#define ERR_CODE_SIZE 2
+#define LOGIN_ARG_SIZE 65
 
 #define MAX_COLLECTION_NAME_SIZE 64
 #define MAX_ITEM_NAME_SIZE 64
@@ -59,7 +62,8 @@ enum ERROR {
 	NO_ACCOUNT = 13,
 	DUPLICATE_SESSION = 14,
 	DUPLICATE_ACCOUNT = 15,
-   BAD_LOGIN = 16
+   BAD_LOGIN = 16,
+   COMMAND_FORMAT = 17
 };
 
 enum PERM {

@@ -61,6 +61,7 @@ private:
 
     // command handlers
     void handleGetSessionID             (Thread* thread);
+    void handleCreateAccount            (Thread* thread);
 
     // functions for ssl
     void initOpenSSL                    ();

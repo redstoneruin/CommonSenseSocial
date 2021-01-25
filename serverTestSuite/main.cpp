@@ -40,6 +40,7 @@ uint8_t* buf;
 int sock;
 
 SSL* ssl;
+uint32_t sessionID;
 
 
 void printResult(int testResult);
@@ -48,8 +49,8 @@ void placeInt(void* voidBuf, uint64_t value, uint16_t start, uint16_t size);
 
 
 int headerTest1();
-
 int loginTest1();
+int createAccountTests();
 
 
 int main(int argc, char* argv[])
@@ -150,6 +151,9 @@ int main(int argc, char* argv[])
    printf("Header test 1: ");
    printResult(headerTest1());
 
+   printf("Account creation tests: ");
+   printResult(createAccountTests());
+
    printf("Login test 1: ");
    printResult(loginTest1());
 
@@ -180,17 +184,48 @@ int headerTest1()
 
    if(bytesRead < HEADER_SIZE) return -2;
 
+   sessionID = getInt(commandBuf, 0, 4);
 
-
-   printf("%#lx: ", getInt(commandBuf, 0, 4));
+   printf("%#x: ", sessionID);
 
    return 0;
 }
+
+
+int createAccountTests()
+{
+  int written, bytesRead, err;
+  char commandBuf[HEADER_SIZE+LOGIN_ARG_SIZE*3];
+
+  placeInt(commandBuf, sessionID, 0, IDENT_SIZE);
+  placeInt(commandBuf, CREATE_ACCOUNT, IDENT_SIZE, COMMAND_SIZE);
+
+  strncpy(commandBuf+HEADER_SIZE, "myusername", LOGIN_ARG_SIZE);
+  strncpy(commandBuf+HEADER_SIZE+LOGIN_ARG_SIZE, "myemail@gmail.com", LOGIN_ARG_SIZE);
+  strncpy(commandBuf+HEADER_SIZE+LOGIN_ARG_SIZE*2, "password", LOGIN_ARG_SIZE);
+
+  if((written = SSL_write(ssl, commandBuf, HEADER_SIZE+LOGIN_ARG_SIZE*3)) <= 0) {
+    return -1;
+  }
+
+
+  bytesRead = SSL_read(ssl, commandBuf, HEADER_SIZE+ERR_CODE_SIZE);
+
+  if(bytesRead < HEADER_SIZE+ERR_CODE_SIZE) return -2;
+
+  err = static_cast<int>(getInt(commandBuf, HEADER_SIZE, ERR_CODE_SIZE));
+
+  printf("Returned with [%d]: ", err);
+
+  return 0;
+}
+
 
 int loginTest1()
 {
     return 0;
 }
+
 
 
 /**
