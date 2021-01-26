@@ -208,11 +208,9 @@ int createAccountTests()
   strncpy(commandBuf+STR_LEN_SIZE, "myusername", SHORT_BUF_SIZE);
   if(SSL_write(ssl, commandBuf, STR_LEN_SIZE+SHORT_BUF_SIZE) <= 0) return -2;
 
-  placeInt(commandBuf, SHORT_BUF_SIZE, 0, STR_LEN_SIZE);
   strncpy(commandBuf+STR_LEN_SIZE, "myemail@gmail.com", SHORT_BUF_SIZE);
   if(SSL_write(ssl, commandBuf, STR_LEN_SIZE+SHORT_BUF_SIZE) <= 0) return -3;
 
-  placeInt(commandBuf, SHORT_BUF_SIZE, 0, STR_LEN_SIZE);
   strncpy(commandBuf+STR_LEN_SIZE, "password", SHORT_BUF_SIZE);
   if(SSL_write(ssl, commandBuf, STR_LEN_SIZE+SHORT_BUF_SIZE) <= 0) return -4;
 
@@ -232,7 +230,30 @@ int createAccountTests()
 
 int loginTest1()
 {
-    return 0;
+  int bytesRead, err;
+  char commandBuf[STR_LEN_SIZE+SHORT_BUF_SIZE];
+
+  placeInt(commandBuf, sessionID, 0, IDENT_SIZE);
+  placeInt(commandBuf, LOGIN, IDENT_SIZE, COMMAND_SIZE);
+  if(SSL_write(ssl, commandBuf, HEADER_SIZE) <= 0) return -1;
+
+  cout << "0x" << hex << getInt(commandBuf, 0, IDENT_SIZE) << dec << ": ";
+
+  placeInt(commandBuf, SHORT_BUF_SIZE, 0, STR_LEN_SIZE);
+  strncpy(commandBuf+STR_LEN_SIZE, "myusername", SHORT_BUF_SIZE);
+  if(SSL_write(ssl, commandBuf, STR_LEN_SIZE+SHORT_BUF_SIZE) <= 0) return -2;
+
+  strncpy(commandBuf+STR_LEN_SIZE, "password", SHORT_BUF_SIZE);
+  if(SSL_write(ssl, commandBuf, STR_LEN_SIZE+SHORT_BUF_SIZE) <= 0) return -3;
+
+
+  bytesRead = SSL_read(ssl, commandBuf, HEADER_SIZE+ERR_CODE_SIZE);
+
+  if(bytesRead < HEADER_SIZE+ERR_CODE_SIZE) return -4;
+
+
+  return static_cast<int>(getInt(commandBuf, HEADER_SIZE, ERR_CODE_SIZE));
+
 }
 
 
@@ -263,7 +284,7 @@ uint64_t getInt(const char* src, uint16_t start, uint16_t size)
     uint64_t result = 0;
     // go from back to front, add based on powers of 8
     for(int i = (start+size)-1; i >= start; i--) {
-        result += src[i] << 8*place;
+        result += static_cast<uint8_t>(src[i]) << 8*place;
         place++;
     }
 

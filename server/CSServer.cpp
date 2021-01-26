@@ -288,7 +288,7 @@ int CSServer::parseMessage(Thread* thread)
         handleCreateAccount(thread);
         break;
     case LOGIN:
-        //handleLogin(thread);
+        handleLogin(thread);
         break;
     default:
         return -1;
@@ -329,7 +329,7 @@ void CSServer::handleCreateAccount(Thread* thread)
 
     err = 0;
 
-    long nextStrSize;
+    uint16_t nextStrSize;
 
     // get username string
     if(SSL_read(thread->ssl, thread->threadBuf, STR_LEN_SIZE) < STR_LEN_SIZE) {
@@ -405,6 +405,80 @@ void CSServer::handleCreateAccount(Thread* thread)
     // cleanup
     free(username);
     free(email);
+    free(password);
+}
+
+
+/**
+ * Handle login command from client
+ * @param thread Thread requesting login
+ */
+void CSServer::handleLogin(Thread* thread)
+{
+    int err;
+    //session_s* session;
+    account_info_s* accountInfo;
+    char *username, *password;
+    uint16_t nextStrSize;
+
+    char returnBuf[HEADER_SIZE+ERR_CODE_SIZE];
+    
+    err = 0;
+
+    // get username
+    if(SSL_read(thread->ssl, thread->threadBuf, STR_LEN_SIZE) < STR_LEN_SIZE) {
+        err = ERROR::COMMAND_FORMAT;
+    }
+
+    nextStrSize = getInt(thread->threadBuf, STR_LEN_SIZE);
+
+    if(!err && SSL_read(thread->ssl, thread->threadBuf, nextStrSize) < nextStrSize) {
+        err = ERROR::COMMAND_FORMAT;
+    }
+
+    username = getCStr(thread->threadBuf, nextStrSize);
+
+    // get password
+    if(!err && SSL_read(thread->ssl, thread->threadBuf, STR_LEN_SIZE) < STR_LEN_SIZE) {
+        err = ERROR::COMMAND_FORMAT;
+    }
+
+    nextStrSize = getInt(thread->threadBuf, STR_LEN_SIZE);
+
+    if(!err && SSL_read(thread->ssl, thread->threadBuf, nextStrSize) < nextStrSize) {
+        err = ERROR::COMMAND_FORMAT;
+    }
+
+    password = getCStr(thread->threadBuf, nextStrSize);
+
+    placeInt(returnBuf, thread->session_id, 0, IDENT_SIZE);
+    placeInt(returnBuf, LOGIN, IDENT_SIZE, COMMAND_SIZE);
+
+    if(err != 0) {
+        placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
+        SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+        free(username);
+        free(password);
+        return;
+    }
+
+    // attempt login and session set
+    accountInfo = _am.login(username, password, &err);
+
+    if(err != 0) {
+        placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
+        SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+        free(username);
+        free(password);
+        return;
+    }
+
+    // set uid in session
+    err = _sm.replaceUid(thread->session_id, accountInfo->uid);
+
+    placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
+    SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+    free(username);
     free(password);
 }
 
@@ -487,7 +561,7 @@ uint64_t CSServer::getInt(const char* src, uint16_t start, uint16_t size)
     uint64_t result = 0;
     // go from back to front, add based on powers of 8
     for(int i = (start+size)-1; i >= start; --i) {
-        result += src[i] << 8*place;
+        result += static_cast<uint8_t>(src[i]) << 8*place;
         place++;
     }
 
