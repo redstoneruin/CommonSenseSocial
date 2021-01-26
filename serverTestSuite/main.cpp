@@ -237,7 +237,6 @@ int loginTest1()
   placeInt(commandBuf, LOGIN, IDENT_SIZE, COMMAND_SIZE);
   if(SSL_write(ssl, commandBuf, HEADER_SIZE) <= 0) return -1;
 
-  cout << "0x" << hex << getInt(commandBuf, 0, IDENT_SIZE) << dec << ": ";
 
   placeInt(commandBuf, SHORT_BUF_SIZE, 0, STR_LEN_SIZE);
   strncpy(commandBuf+STR_LEN_SIZE, "myusername", SHORT_BUF_SIZE);

@@ -325,83 +325,54 @@ void CSServer::handleCreateAccount(Thread* thread)
 
     char *username, *email, *password;
 
-    char returnBuf[HEADER_SIZE+ERR_CODE_SIZE];
-
     err = 0;
 
-    uint16_t nextStrSize;
-
     // get username string
-    if(SSL_read(thread->ssl, thread->threadBuf, STR_LEN_SIZE) < STR_LEN_SIZE) {
-        err = ERROR::COMMAND_FORMAT;
+    username = scanString(thread->ssl, MAX_LOGIN_FIELD_SIZE, &err);
+
+    if(err) {
+        returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
+        return;
     }
-
-    nextStrSize = getInt(thread->threadBuf, STR_LEN_SIZE);
-
-    if(!err && SSL_read(thread->ssl, thread->threadBuf, nextStrSize) < nextStrSize) {
-        err = ERROR::COMMAND_FORMAT;
-    }
-
-    username = getCStr(thread->threadBuf, nextStrSize);
 
     // get email string
-    if(!err && SSL_read(thread->ssl, thread->threadBuf, STR_LEN_SIZE) < STR_LEN_SIZE) {
-        err = ERROR::COMMAND_FORMAT;
+    email = scanString(thread->ssl, MAX_LOGIN_FIELD_SIZE, &err);
+
+    if(err) {
+        returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
+        free(username);
+        return;
     }
-
-    nextStrSize = getInt(thread->threadBuf, STR_LEN_SIZE);
-
-    if(!err && SSL_read(thread->ssl, thread->threadBuf, nextStrSize) < nextStrSize) {
-        err = ERROR::COMMAND_FORMAT;
-    }
-
-    email = getCStr(thread->threadBuf, nextStrSize);
 
     // get password string
-    if(!err && SSL_read(thread->ssl, thread->threadBuf, STR_LEN_SIZE) < STR_LEN_SIZE) {
-        err = ERROR::COMMAND_FORMAT;
+    password = scanString(thread->ssl, MAX_LOGIN_FIELD_SIZE, &err);
+
+    if(err) {
+        returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
+        free(username);
+        free(email);
+        return;
     }
 
-    nextStrSize = getInt(thread->threadBuf, STR_LEN_SIZE);
 
-    if(!err && SSL_read(thread->ssl, thread->threadBuf, nextStrSize) < nextStrSize) {
-        err = ERROR::COMMAND_FORMAT;
-    }
-
-    password = getCStr(thread->threadBuf, nextStrSize);
-
-
-    // check for valid params
-    if(strlen(username) > MAX_LOGIN_FIELD_SIZE
-        || strlen(email) > MAX_LOGIN_FIELD_SIZE
-        || strlen(password) > MAX_LOGIN_FIELD_SIZE) {
-        err = ERROR::COMMAND_FORMAT;
-    }
-
-    placeInt(returnBuf, thread->session_id, 0, IDENT_SIZE);
-    placeInt(returnBuf, CREATE_ACCOUNT, IDENT_SIZE, COMMAND_SIZE);
 
     session = _sm.getSession(thread->session_id);
     if(!err && !session) err = ERROR::NO_SESSION;
 
     // if format error, return before making account
-    if(err != 0) {
-        placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
-        SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+    if(err) {
+        returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
         free(username);
         free(email);
         free(password);
         return;
     }
 
-
-
     // create the account
     err = _am.createAccount(username, email, password);
 
-    placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
-    SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
-
+    returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
+    
     // cleanup
     free(username);
     free(email);
@@ -416,58 +387,33 @@ void CSServer::handleCreateAccount(Thread* thread)
 void CSServer::handleLogin(Thread* thread)
 {
     int err;
-    //session_s* session;
     account_info_s* accountInfo;
     char *username, *password;
-    uint16_t nextStrSize;
-
-    char returnBuf[HEADER_SIZE+ERR_CODE_SIZE];
     
     err = 0;
 
     // get username
-    if(SSL_read(thread->ssl, thread->threadBuf, STR_LEN_SIZE) < STR_LEN_SIZE) {
-        err = ERROR::COMMAND_FORMAT;
+    username = scanString(thread->ssl, MAX_LOGIN_FIELD_SIZE, &err);
+
+    if(err) {
+        returnWithCode(thread->ssl, thread->session_id, LOGIN, err);
+        return;
     }
-
-    nextStrSize = getInt(thread->threadBuf, STR_LEN_SIZE);
-
-    if(!err && SSL_read(thread->ssl, thread->threadBuf, nextStrSize) < nextStrSize) {
-        err = ERROR::COMMAND_FORMAT;
-    }
-
-    username = getCStr(thread->threadBuf, nextStrSize);
 
     // get password
-    if(!err && SSL_read(thread->ssl, thread->threadBuf, STR_LEN_SIZE) < STR_LEN_SIZE) {
-        err = ERROR::COMMAND_FORMAT;
-    }
+    password = scanString(thread->ssl, MAX_LOGIN_FIELD_SIZE, &err);
 
-    nextStrSize = getInt(thread->threadBuf, STR_LEN_SIZE);
-
-    if(!err && SSL_read(thread->ssl, thread->threadBuf, nextStrSize) < nextStrSize) {
-        err = ERROR::COMMAND_FORMAT;
-    }
-
-    password = getCStr(thread->threadBuf, nextStrSize);
-
-    placeInt(returnBuf, thread->session_id, 0, IDENT_SIZE);
-    placeInt(returnBuf, LOGIN, IDENT_SIZE, COMMAND_SIZE);
-
-    if(err != 0) {
-        placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
-        SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+    if(err) {
+        returnWithCode(thread->ssl, thread->session_id, LOGIN, err);
         free(username);
-        free(password);
         return;
     }
 
     // attempt login and session set
     accountInfo = _am.login(username, password, &err);
 
-    if(err != 0) {
-        placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
-        SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+    if(err) {
+        returnWithCode(thread->ssl, thread->session_id, LOGIN, err);
         free(username);
         free(password);
         return;
@@ -476,8 +422,7 @@ void CSServer::handleLogin(Thread* thread)
     // set uid in session
     err = _sm.replaceUid(thread->session_id, accountInfo->uid);
 
-    placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
-    SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+    returnWithCode(thread->ssl, thread->session_id, LOGIN, err);
     free(username);
     free(password);
 }
@@ -505,6 +450,63 @@ int CSServer::readBytes(int cl, char* buf, uint16_t size)
 
     return rcvSize;
 }
+
+
+/**
+ * Return with error code to given ssl socket
+ * @param ssl SSL socket to use
+ * @param session_id Session ID to embed
+ * @param command Command to embed
+ * @param code Error code to embed
+ */
+void CSServer::returnWithCode(SSL* ssl, uint32_t session_id, uint16_t command, int code)
+{
+    char returnBuf[HEADER_SIZE+ERR_CODE_SIZE];
+    placeInt(returnBuf, session_id, 0, IDENT_SIZE);
+    placeInt(returnBuf, command, IDENT_SIZE, COMMAND_SIZE);
+    placeInt(returnBuf, code, HEADER_SIZE, ERR_CODE_SIZE);
+
+    SSL_write(ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+}
+
+/**
+ * Scan string from the ssl context, return new C string stored on heap
+ * @param ssl SSL socket to use
+ * @param maxSize Max size of the string to parse
+ * @parm err Pointer to error code container
+ */
+char* CSServer::scanString(SSL* ssl, uint16_t maxSize, int* err)
+{
+    uint16_t strSize;
+    char buf[STR_LEN_SIZE];
+    char* ret;
+
+    if(SSL_read(ssl, buf, STR_LEN_SIZE) < STR_LEN_SIZE) {
+        if(err) *err = ERROR::COMMAND_FORMAT;
+        return nullptr;
+    }
+
+    strSize = getInt(buf, STR_LEN_SIZE);
+
+    if(strSize > maxSize) {
+        if(err) *err = ERROR::COMMAND_FORMAT;
+        return nullptr;
+    }
+
+    ret = (char*) malloc (strSize+1);
+
+    if(SSL_read(ssl, ret, strSize) < strSize) {
+        free(ret);
+        if(err) *err = ERROR::COMMAND_FORMAT;
+        return nullptr;
+    }
+
+    ret[strSize] = 0;
+
+    return ret;
+
+}
+
 
 
 /**

@@ -70,7 +70,9 @@ private:
     SSL_CTX* createContext              ();
     void configureContext               (SSL_CTX* ctx);
 
+    void returnWithCode                 (SSL* ssl, uint32_t session_id, uint16_t command, int code);
 
+    char* scanString                    (SSL* ssl, uint16_t maxSize, int* err = nullptr);
 
     char* getCStr                       (const char* src, uint16_t size);
     char* getCStr                       (const char* src, uint16_t start, uint16_t size);
