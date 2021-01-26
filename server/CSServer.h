@@ -55,7 +55,7 @@ private:
 
     void handleClient                   (Thread* thread);
 
-    int parseMessage                    (Thread* thread, char* message);
+    int parseMessage                    (Thread* thread);
 
     int readBytes                       (int cl, char* buf, uint16_t size);
 

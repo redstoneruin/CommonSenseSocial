@@ -39,11 +39,11 @@
 #define IDENT_SIZE 4
 #define COMMAND_SIZE 2
 #define ERR_CODE_SIZE 2
-#define LOGIN_ARG_SIZE 65
+#define STR_LEN_SIZE 2
 
 #define MAX_COLLECTION_NAME_SIZE 64
 #define MAX_ITEM_NAME_SIZE 64
-
+#define MAX_LOGIN_FIELD_SIZE 128
 
 
 enum ERROR {

@@ -9,6 +9,8 @@
 #define DEFAULT_PORT 9251
 #define DEFAULT_BUF_SIZE 2048
 
+#define SHORT_BUF_SIZE 50
+
 #define BASE 256
 
 #include <stdio.h>
@@ -195,23 +197,30 @@ int headerTest1()
 int createAccountTests()
 {
   int written, bytesRead, err;
-  char commandBuf[HEADER_SIZE+LOGIN_ARG_SIZE*3];
+  char commandBuf[STR_LEN_SIZE+SHORT_BUF_SIZE];
 
   placeInt(commandBuf, sessionID, 0, IDENT_SIZE);
   placeInt(commandBuf, CREATE_ACCOUNT, IDENT_SIZE, COMMAND_SIZE);
+  if(SSL_write(ssl, commandBuf, HEADER_SIZE) <= 0) return -1;
 
-  strncpy(commandBuf+HEADER_SIZE, "myusername", LOGIN_ARG_SIZE);
-  strncpy(commandBuf+HEADER_SIZE+LOGIN_ARG_SIZE, "myemail@gmail.com", LOGIN_ARG_SIZE);
-  strncpy(commandBuf+HEADER_SIZE+LOGIN_ARG_SIZE*2, "password", LOGIN_ARG_SIZE);
 
-  if((written = SSL_write(ssl, commandBuf, HEADER_SIZE+LOGIN_ARG_SIZE*3)) <= 0) {
-    return -1;
-  }
+  placeInt(commandBuf, SHORT_BUF_SIZE, 0, STR_LEN_SIZE);
+  strncpy(commandBuf+STR_LEN_SIZE, "myusername", SHORT_BUF_SIZE);
+  if(SSL_write(ssl, commandBuf, STR_LEN_SIZE+SHORT_BUF_SIZE) <= 0) return -2;
+
+  placeInt(commandBuf, SHORT_BUF_SIZE, 0, STR_LEN_SIZE);
+  strncpy(commandBuf+STR_LEN_SIZE, "myemail@gmail.com", SHORT_BUF_SIZE);
+  if(SSL_write(ssl, commandBuf, STR_LEN_SIZE+SHORT_BUF_SIZE) <= 0) return -3;
+
+  placeInt(commandBuf, SHORT_BUF_SIZE, 0, STR_LEN_SIZE);
+  strncpy(commandBuf+STR_LEN_SIZE, "password", SHORT_BUF_SIZE);
+  if(SSL_write(ssl, commandBuf, STR_LEN_SIZE+SHORT_BUF_SIZE) <= 0) return -4;
+
 
 
   bytesRead = SSL_read(ssl, commandBuf, HEADER_SIZE+ERR_CODE_SIZE);
 
-  if(bytesRead < HEADER_SIZE+ERR_CODE_SIZE) return -2;
+  if(bytesRead < HEADER_SIZE+ERR_CODE_SIZE) return -5;
 
   err = static_cast<int>(getInt(commandBuf, HEADER_SIZE, ERR_CODE_SIZE));
 
@@ -254,8 +263,7 @@ uint64_t getInt(const char* src, uint16_t start, uint16_t size)
     uint64_t result = 0;
     // go from back to front, add based on powers of 8
     for(int i = (start+size)-1; i >= start; i--) {
-        uint8_t val = (uint8_t)src[i];
-        result += val * pow(BASE, place);
+        result += src[i] << 8*place;
         place++;
     }
 

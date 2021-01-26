@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <bitset>
 
 #include <netdb.h>
 #include <sys/socket.h>
@@ -239,7 +240,6 @@ void CSServer::handleClient(Thread* thread)
     while(true) 
     {
         int bytesRead;
-        cout << "Attempting read" << endl;
         // Read from client until full tls record received
         if((bytesRead = SSL_read(thread->ssl, thread->threadBuf, HEADER_SIZE)) <= 0)
         {
@@ -249,18 +249,12 @@ void CSServer::handleClient(Thread* thread)
 
         // pass bytes read to server
         //server.received_data((uint8_t*)thread->threadBuf, bytesRead);
-        if(bytesRead > 0) {
-            cout << "Received " << bytesRead << " bytes from client " << thread->cl << endl;
-            char* message = getCStr(thread->threadBuf, bytesRead);           
-            
+        if(bytesRead > 0) {            
             // parse message
-            if(parseMessage(thread, message) != 0) {
+            if(parseMessage(thread) != 0) {
                 cerr << "Received invalid message from client" << endl;
-                free(message);
                 break;
             } 
-
-            free(message);
         } 
 
     }
@@ -276,7 +270,7 @@ void CSServer::handleClient(Thread* thread)
  * @param message The message received from the client
  * @return 0 if successfully parsed and handled, error code if not
  */
-int CSServer::parseMessage(Thread* thread, char* message)
+int CSServer::parseMessage(Thread* thread)
 {
     thread->session_id = getInt(thread->threadBuf, 0, 4);
     uint16_t command = getInt(thread->threadBuf, 4, 2);
@@ -284,12 +278,17 @@ int CSServer::parseMessage(Thread* thread, char* message)
     uint8_t flags = (command & 0x0FF0) >> 4;
     command = command & 0xF00F;
 
+    cout << "Parsing command: 0x" << hex << command << dec << endl;
+
     switch(command) {
     case GET_SESSION_ID:
         handleGetSessionID(thread);
         break;
     case CREATE_ACCOUNT:
         handleCreateAccount(thread);
+        break;
+    case LOGIN:
+        //handleLogin(thread);
         break;
     default:
         return -1;
@@ -321,56 +320,92 @@ void CSServer::handleGetSessionID(Thread* thread)
  */
 void CSServer::handleCreateAccount(Thread* thread)
 {
-    int err, bytesRead;
+    int err;
     session_s* session;
-    char usernameBuf[LOGIN_ARG_SIZE];
-    char emailBuf[LOGIN_ARG_SIZE];
-    char passwordBuf[LOGIN_ARG_SIZE];
+
+    char *username, *email, *password;
 
     char returnBuf[HEADER_SIZE+ERR_CODE_SIZE];
 
     err = 0;
 
-    if((bytesRead = SSL_read(thread->ssl, usernameBuf, LOGIN_ARG_SIZE)) < LOGIN_ARG_SIZE) {
+    long nextStrSize;
+
+    // get username string
+    if(SSL_read(thread->ssl, thread->threadBuf, STR_LEN_SIZE) < STR_LEN_SIZE) {
         err = ERROR::COMMAND_FORMAT;
     }
 
-    if(!err && (bytesRead = SSL_read(thread->ssl, emailBuf, LOGIN_ARG_SIZE)) < LOGIN_ARG_SIZE) {
+    nextStrSize = getInt(thread->threadBuf, STR_LEN_SIZE);
+
+    if(!err && SSL_read(thread->ssl, thread->threadBuf, nextStrSize) < nextStrSize) {
         err = ERROR::COMMAND_FORMAT;
     }
 
-    if(!err && (bytesRead = SSL_read(thread->ssl, passwordBuf, LOGIN_ARG_SIZE)) < LOGIN_ARG_SIZE) {
+    username = getCStr(thread->threadBuf, nextStrSize);
+
+    // get email string
+    if(!err && SSL_read(thread->ssl, thread->threadBuf, STR_LEN_SIZE) < STR_LEN_SIZE) {
         err = ERROR::COMMAND_FORMAT;
     }
 
-    if(strlen(usernameBuf) >= LOGIN_ARG_SIZE
-        || strlen(emailBuf) >= LOGIN_ARG_SIZE
-        || strlen(passwordBuf) >= LOGIN_ARG_SIZE) {
+    nextStrSize = getInt(thread->threadBuf, STR_LEN_SIZE);
+
+    if(!err && SSL_read(thread->ssl, thread->threadBuf, nextStrSize) < nextStrSize) {
+        err = ERROR::COMMAND_FORMAT;
+    }
+
+    email = getCStr(thread->threadBuf, nextStrSize);
+
+    // get password string
+    if(!err && SSL_read(thread->ssl, thread->threadBuf, STR_LEN_SIZE) < STR_LEN_SIZE) {
+        err = ERROR::COMMAND_FORMAT;
+    }
+
+    nextStrSize = getInt(thread->threadBuf, STR_LEN_SIZE);
+
+    if(!err && SSL_read(thread->ssl, thread->threadBuf, nextStrSize) < nextStrSize) {
+        err = ERROR::COMMAND_FORMAT;
+    }
+
+    password = getCStr(thread->threadBuf, nextStrSize);
+
+
+    // check for valid params
+    if(strlen(username) > MAX_LOGIN_FIELD_SIZE
+        || strlen(email) > MAX_LOGIN_FIELD_SIZE
+        || strlen(password) > MAX_LOGIN_FIELD_SIZE) {
         err = ERROR::COMMAND_FORMAT;
     }
 
     placeInt(returnBuf, thread->session_id, 0, IDENT_SIZE);
     placeInt(returnBuf, CREATE_ACCOUNT, IDENT_SIZE, COMMAND_SIZE);
 
-    if(!err) {
-        session = _sm.getSession(thread->session_id);
-        if(!session) err = ERROR::NO_SESSION;
-    }
+    session = _sm.getSession(thread->session_id);
+    if(!err && !session) err = ERROR::NO_SESSION;
 
     // if format error, return before making account
     if(err != 0) {
         placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
         SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+        free(username);
+        free(email);
+        free(password);
         return;
     }
 
 
 
     // create the account
-    err = _am.createAccount(usernameBuf, emailBuf, passwordBuf);
+    err = _am.createAccount(username, email, password);
 
     placeInt(returnBuf, err, HEADER_SIZE, ERR_CODE_SIZE);
     SSL_write(thread->ssl, returnBuf, HEADER_SIZE+ERR_CODE_SIZE);
+
+    // cleanup
+    free(username);
+    free(email);
+    free(password);
 }
 
 
@@ -451,9 +486,8 @@ uint64_t CSServer::getInt(const char* src, uint16_t start, uint16_t size)
     int place = 0;
     uint64_t result = 0;
     // go from back to front, add based on powers of 8
-    for(int i = (start+size)-1; i >= start; i--) {
-        uint8_t val = (uint8_t)src[i];
-        result += val * pow(BASE, place);
+    for(int i = (start+size)-1; i >= start; --i) {
+        result += src[i] << 8*place;
         place++;
     }
 
