@@ -5,6 +5,7 @@
  */
 
 #include <ctime>
+#include <string>
 
 #include "../definitions.h"
 
@@ -27,8 +28,8 @@ public:
 	void setCreatedTime(time_t createdTime);
 	void setModifiedTime(time_t modifiedTime);
 
-	char* name();
-	char* owner();
+	std::string name();
+	std::string owner();
 	PERM perm();
 	DTYPE type();
 	time_t createdTime();
@@ -39,8 +40,8 @@ public:
 	void* data();
 
 private:
-	char* _name;
-	char* _owner;
+	std::string _name;
+	std::string _owner;
 	PERM _perm;
 	DTYPE _type;
 	time_t _createdTime;

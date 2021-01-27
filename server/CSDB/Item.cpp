@@ -13,6 +13,8 @@
 
 #include "Item.h"
 
+using namespace std;
+
 
 /**
  * Constructor for item type, sets instance variables and fills data field
@@ -28,30 +30,22 @@ Item::Item(const char* name, const char* owner, PERM perm, DTYPE type, void* col
  * Constructor for item type with no data
  */
 Item::Item(const char* name, const char* owner, PERM perm, DTYPE type, void* collection, size_t dataSize) :
-	_perm(perm),
+   _perm(perm),
 	_type(type),
 	_loaded(false),
 	_collection(collection),
 	_dataSize(dataSize),
 	_data(nullptr)
 {
-	int nameLen;
-	nameLen = strlen(name);
-
-	setOwner(owner);
+   if(name) _name = string(name);
+   if(owner) _owner = string(owner);
 
 	_createdTime = time(nullptr);
 	_modifiedTime = time(nullptr);
-	_name = (char*) malloc (nameLen+1);
-
-	strncpy(_name, name, nameLen+1);
 }
 
 Item::~Item()
 {
-	free(_name);
-	free(_owner);
-
 	if(_data != nullptr) free(_data);
 }
 
@@ -153,15 +147,7 @@ void Item::setData(const void* dataBuf, size_t dataSize)
  */
 void Item::setOwner(const char* owner)
 {
-	if(owner == nullptr) {
-		_owner = nullptr;
-		return;
-	}
-
-	int ownerLen = strlen(owner);
-	_owner = (char*) malloc (ownerLen+1);
-
-	strncpy(_owner, owner, ownerLen+1);
+   _owner = string(owner);
 
 }
 
@@ -174,8 +160,8 @@ void Item::setModifiedTime(time_t modifiedTime) 		{_modifiedTime = modifiedTime;
 
 
 // getters
-char* Item::name() 				{return _name;}
-char* Item::owner() 			{return _owner;}
+string Item::name() 				{return _name;}
+string Item::owner() 			{return _owner;}
 PERM Item::perm() 				{return _perm;}
 DTYPE Item::type()				{return _type;}
 time_t Item::createdTime()		{return _createdTime;}

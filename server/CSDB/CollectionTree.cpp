@@ -11,12 +11,14 @@
 #define COLLECTIONS_CHILDREN_SIZE 4
 #define COLLECTIONS_ITEMS_SIZE 8
 
+#define BUF_SIZE 4096
 
 #include <string>
 #include <vector>
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <iostream>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -26,9 +28,9 @@
 
 #include "CollectionTree.h"
 
-#define BUF_SIZE 4096
 
 
+using namespace std;
 
 CollectionTree::CollectionTree() : 
 	_numBaseCollections(0),
@@ -129,7 +131,7 @@ void CollectionTree::setupCollectionManifest(collection_s* collection)
     int fd, colonIndex;
     FILE* file;
     char buf[MAX_COLLECTION_NAME_SIZE + COLLECTIONS_ITEMS_SIZE + 2];
-    std::string manifestName(collection->path);
+    string manifestName(collection->path);
     manifestName.push_back('/');
     manifestName.append("Manifest");
 
@@ -142,14 +144,14 @@ void CollectionTree::setupCollectionManifest(collection_s* collection)
     fd = open(manifestName.c_str(), O_RDWR | O_CREAT);
 
     if(fd < 0) {
-        fprintf(stderr, "Error: Could not open manifest file for collection: %s\n", collection->name);
+        cerr << "Error: Could not open manifest file for collection: " << collection->name << endl;
         return;
     }
 
     file = fdopen(fd, "r+");    
 
     if(file == nullptr) {
-        fprintf(stderr, "Error: Could not open file descriptor for collection: %s\n", collection->name);
+        cerr << "Error: Could not open file descriptor for collection: " << collection->name << endl;
         return;
     }
 
@@ -170,7 +172,7 @@ void CollectionTree::setupCollectionManifest(collection_s* collection)
     }
 
     if(colonIndex == 0) {
-        fprintf(stderr, "Error: Could not find collection size for collection: %s\n", collection->name);
+        cerr << "Error: Could not find collection size for collection: " << collection->name << endl;
     }
 
     // set num items to whats in the manifest
@@ -184,8 +186,8 @@ void CollectionTree::setupCollectionManifest(collection_s* collection)
     {
         if(fscanf(file, "%s", buf) < 1) {
             // not enough items
-            fprintf(stderr, "Error: Not enough items in manifest at path: %s, buffer: %s\n", manifestName.c_str(), buf);
-            fprintf(stderr, "Expected %llu items, got %llu\n", collection->numItems, i);
+            cerr << "Error: Not enough items in manifest at path: " << manifestName << ", buffer: " << buf << endl;
+            cerr << "Expected %llu items" << collection->numItems << ", got " <<  i << endl;
             exit(1);
         }
 
@@ -671,7 +673,7 @@ int CollectionTree::deleteItem(const char* path)
     for(unsigned long long i = 0; i < collection->numItems; i++)
     {
         Item* currentItem = collection->items[i];
-        if(strcmp(currentItem->name(), item->name()) == 0)
+        if(currentItem->name().compare(item->name()) == 0)
         {
             itemIndex = i;
             break;
@@ -751,7 +753,7 @@ Item* CollectionTree::getItemFromCollection(collection_s* collection, const char
     {
         Item* item = collection->items[i];
 
-        if(strcmp(item->name(), name) == 0) return item;
+        if(item->name().compare(name) == 0) return item;
     }
 
     return nullptr;
@@ -772,14 +774,9 @@ int CollectionTree::getOwner(const char* path, void* buf, size_t bufSize)
 
     if(item == nullptr) return ERROR::PATH_INVAL;
 
-    char* owner = item->owner();
+    string owner = item->owner();
 
-    if(owner == nullptr) {
-        strncpy((char*)buf, "", bufSize);
-        return 0;
-    }
-
-    strncpy((char*)buf, owner, bufSize);
+    strncpy((char*)buf, owner.c_str(), bufSize);
 
     return 0;
 }
@@ -900,7 +897,7 @@ int CollectionTree::addItemToParent(Item* item)
         Item* currentItem = parent->items[i];
         if(currentItem == item) {
             return 0;
-        } else if (strcmp(currentItem->name(), item->name()) == 0) {
+        } else if (currentItem->name().compare(item->name()) == 0) {
             item->setCreatedTime(currentItem->createdTime());
             parent->items[i] = item;
             delete currentItem;
@@ -980,8 +977,8 @@ int CollectionTree::updateManifest(collection_s* collection)
     {
         Item* item = collection->items[i];
 
-        dprintf(manFile, " %s:%s:%d:%d:%ld:%ld:%lu",  item->name(), 
-                                                    item->owner() == nullptr ? "" : item->owner(), 
+        dprintf(manFile, " %s:%s:%d:%d:%ld:%ld:%lu",  item->name().c_str(), 
+                                                    item->owner().c_str(), 
                                                     item->perm(), 
                                                     item->type(),
                                                     item->createdTime(),
