@@ -7,7 +7,9 @@
 #define DEFAULT_BUF_SIZE 4096
 
 #include <semaphore.h>
-#include <stdint.h>
+#include <cstdint>
+#include <memory>
+#include <string>
 
 #include <openssl/ssl.h>
 
@@ -72,7 +74,7 @@ private:
 
     void returnWithCode                 (SSL* ssl, uint32_t session_id, uint16_t command, int code);
 
-    char* scanString                    (SSL* ssl, uint16_t maxSize, int* err = nullptr);
+    std::string scanString                    (SSL* ssl, uint16_t maxSize, int* err = nullptr);
 
     char* getCStr                       (const char* src, uint16_t size);
     char* getCStr                       (const char* src, uint16_t start, uint16_t size);

@@ -20,7 +20,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
-#include <bitset>
+#include <memory>
 
 #include <netdb.h>
 #include <sys/socket.h>
@@ -323,7 +323,7 @@ void CSServer::handleCreateAccount(Thread* thread)
     int err;
     session_s* session;
 
-    char *username, *email, *password;
+    string username, email, password;
 
     err = 0;
 
@@ -340,7 +340,6 @@ void CSServer::handleCreateAccount(Thread* thread)
 
     if(err) {
         returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
-        free(username);
         return;
     }
 
@@ -349,8 +348,6 @@ void CSServer::handleCreateAccount(Thread* thread)
 
     if(err) {
         returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
-        free(username);
-        free(email);
         return;
     }
 
@@ -362,21 +359,13 @@ void CSServer::handleCreateAccount(Thread* thread)
     // if format error, return before making account
     if(err) {
         returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
-        free(username);
-        free(email);
-        free(password);
         return;
     }
 
     // create the account
-    err = _am.createAccount(username, email, password);
+    err = _am.createAccount(username.c_str(), email.c_str(), password.c_str());
 
     returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
-    
-    // cleanup
-    free(username);
-    free(email);
-    free(password);
 }
 
 
@@ -388,7 +377,7 @@ void CSServer::handleLogin(Thread* thread)
 {
     int err;
     account_info_s* accountInfo;
-    char *username, *password;
+    string username, password;
     
     err = 0;
 
@@ -405,17 +394,14 @@ void CSServer::handleLogin(Thread* thread)
 
     if(err) {
         returnWithCode(thread->ssl, thread->session_id, LOGIN, err);
-        free(username);
         return;
     }
 
     // attempt login and session set
-    accountInfo = _am.login(username, password, &err);
+    accountInfo = _am.login(username.c_str(), password.c_str(), &err);
 
     if(err) {
         returnWithCode(thread->ssl, thread->session_id, LOGIN, err);
-        free(username);
-        free(password);
         return;
     }
 
@@ -423,8 +409,6 @@ void CSServer::handleLogin(Thread* thread)
     err = _sm.replaceUid(thread->session_id, accountInfo->uid);
 
     returnWithCode(thread->ssl, thread->session_id, LOGIN, err);
-    free(username);
-    free(password);
 }
 
 
@@ -475,7 +459,7 @@ void CSServer::returnWithCode(SSL* ssl, uint32_t session_id, uint16_t command, i
  * @param maxSize Max size of the string to parse
  * @parm err Pointer to error code container
  */
-char* CSServer::scanString(SSL* ssl, uint16_t maxSize, int* err)
+string CSServer::scanString(SSL* ssl, uint16_t maxSize, int* err)
 {
     uint16_t strSize;
     char buf[STR_LEN_SIZE];
@@ -496,15 +480,18 @@ char* CSServer::scanString(SSL* ssl, uint16_t maxSize, int* err)
     ret = (char*) malloc (strSize+1);
 
     if(SSL_read(ssl, ret, strSize) < strSize) {
-        free(ret);
         if(err) *err = ERROR::COMMAND_FORMAT;
+        free(ret);
         return nullptr;
     }
 
     ret[strSize] = 0;
 
-    return ret;
+    string toRet(ret);
 
+    free(ret);
+
+    return toRet;
 }
 
 
