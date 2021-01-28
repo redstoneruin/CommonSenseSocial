@@ -458,8 +458,10 @@ void CSServer::handlePost(Thread* thread, uint8_t flags)
         break;
     }
 
-
-
+    if(type == DTYPE::NONE) {
+        returnWithCode(thread->ssl, thread->session_id, CMD::POST & (flags << 8), ERROR::TYPE_INVAL);
+        return;
+    }
 }
 
 /**
