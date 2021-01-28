@@ -4,3 +4,8 @@ users/{uid}: {
 	allow r
 }
 
+match
+public: {
+   allow r
+}
+

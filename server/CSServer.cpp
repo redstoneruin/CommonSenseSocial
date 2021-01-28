@@ -7,6 +7,8 @@
 #define DEFAULT_PORT 9251
 #define DEFAULT_SERVER_NAME "localhost"
 
+#define DEFAULT_DB "db"
+
 #include <err.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -62,7 +64,14 @@ CSServer::CSServer(int numThreads) :
         new std::thread(&CSServer::start, this, t);
     }
 
-    _dbam.addDB("db", "rules/db.rules");
+    request_info_t requestInfo;
+    requestInfo.uid = nullptr;
+    requestInfo.perms = "rw";
+    requestInfo.isAdmin = true;
+
+    _dbam.addDB(DEFAULT_DB, "rules/db.rules");
+    _dbam.addCollection(DEFAULT_DB, "users", requestInfo);
+    _dbam.addCollection(DEFAULT_DB, "public", requestInfo);
 }
 
 
@@ -422,6 +431,34 @@ void CSServer::handleLogin(Thread* thread)
  */
 void CSServer::handlePost(Thread* thread, uint8_t flags)
 {
+    DTYPE type;
+
+    // set post type
+    switch(flags) {
+    case FLAGS::TEXT_RESOURCE:
+        type = DTYPE::TEXT;
+        break;
+    case FLAGS::IMAGE_RESOURCE:
+        type = DTYPE::TEXT;
+        break;
+    case FLAGS::AUDIO_RESOURCE:
+        type = DTYPE::AUDIO;
+        break;
+    case FLAGS::VIDEO_RESOURCE:
+        type = DTYPE::VIDEO;
+        break;
+    case FLAGS::STREAM_RESOURCE:
+        type = DTYPE::STREAM;
+        break;
+    case FLAGS::AUDIO_STREAM_RESOURCE:
+        type = DTYPE::AUDIO_STREAM;
+        break;
+    default:
+        type = DTYPE::NONE;
+        break;
+    }
+
+
 
 }
 
