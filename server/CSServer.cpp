@@ -7,8 +7,6 @@
 #define DEFAULT_PORT 9251
 #define DEFAULT_SERVER_NAME "localhost"
 
-#define BASE 256
-
 #include <err.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -63,6 +61,8 @@ CSServer::CSServer(int numThreads) :
         // start up this thread
         new std::thread(&CSServer::start, this, t);
     }
+
+    _dbam.addDB("db", "rules/db.rules");
 }
 
 

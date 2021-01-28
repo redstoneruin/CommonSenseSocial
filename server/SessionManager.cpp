@@ -16,7 +16,6 @@
 
 
 
-
 SessionManager::SessionManager(uint16_t tableSize) :
 	_tableSize(tableSize)
 {
@@ -64,8 +63,6 @@ uint32_t SessionManager::createSession()
 
 	return id;
 }
-
-
 
 
 

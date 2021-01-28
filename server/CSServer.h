@@ -48,7 +48,7 @@ private:
     // ssl context
     SSL_CTX* _ctx;
 
-    CSDBAccessManager dbam; 
+    CSDBAccessManager _dbam; 
     SessionManager _sm;
     AccountManager _am;
 
