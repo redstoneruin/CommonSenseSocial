@@ -13,6 +13,7 @@
 #define CREATE_ACCOUNT 0x1002
 #define LOGIN 0x1003
 #define GET 0x2001
+#define POST 0x2002
 
 /**
  * Server command flags
