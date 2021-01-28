@@ -417,7 +417,8 @@ void CSServer::handleLogin(Thread* thread)
 
 /**
  * Handle post to database
- * 
+ * @param thread Thread handling post request
+ * @param flags Flags associated with this post 
  */
 void CSServer::handlePost(Thread* thread, uint8_t flags)
 {

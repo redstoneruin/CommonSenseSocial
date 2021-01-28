@@ -7,23 +7,6 @@
  */
 
 
-/**
- * Server command flags
- */
-#define TEXT_RESOURCE 0x01
-#define IMAGE_RESOURCE 0x02
-#define AUDIO_RESOURCE 0x03
-#define VIDEO_RESOURCE 0x04
-#define STREAM_RESOURCE 0x05
-#define AUDIO_STREAM_RESOURCE 0x06
-
-/**
- * Server response identifiers
- */
-#define SUCCESS 0x00
-#define NOT_FOUND 0x01
-#define NO_ACCESS 0x02
-
 
 /**
  * Definitions for buffer sized
@@ -48,7 +31,17 @@ enum CMD {
    POST = 0x2002
 };
 
+enum FLAGS {
+   TEXT_RESOURCE = 0x01,
+   IMAGE_RESOURCE = 0x02,
+   AUDIO_RESOURCE = 0x03,
+   VIDEO_RESOURCE = 0x04,
+   STREAM_RESOURCE = 0x05,
+   AUDIO_STREAM_RESOURCE = 0x06
+};
+
 enum ERROR {
+   SUCCESS = 0,
 	PARSE = 1,
 	NO_PERMS = 2,
 	PATH_INVAL = 3,
