@@ -65,6 +65,7 @@ private:
     void handleGetSessionID             (Thread* thread);
     void handleCreateAccount            (Thread* thread);
     void handleLogin                    (Thread* thread);
+    void handlePost                     (Thread* thread, uint8_t flags);
 
     // functions for ssl
     void initOpenSSL                    ();

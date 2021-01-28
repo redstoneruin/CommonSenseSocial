@@ -281,14 +281,17 @@ int CSServer::parseMessage(Thread* thread)
     cout << "Parsing command: 0x" << hex << command << dec << endl;
 
     switch(command) {
-    case GET_SESSION_ID:
+    case CMD::GET_SESSION_ID:
         handleGetSessionID(thread);
         break;
-    case CREATE_ACCOUNT:
+    case CMD::CREATE_ACCOUNT:
         handleCreateAccount(thread);
         break;
-    case LOGIN:
+    case CMD::LOGIN:
         handleLogin(thread);
+        break;
+    case CMD::POST:
+        handlePost(thread, flags);
         break;
     default:
         return -1;
@@ -308,7 +311,7 @@ void CSServer::handleGetSessionID(Thread* thread)
     thread->session_id = _sm.createSession();
 
     placeInt(returnBuf, thread->session_id, 0, IDENT_SIZE);
-    placeInt(returnBuf, GET_SESSION_ID, IDENT_SIZE, COMMAND_SIZE);
+    placeInt(returnBuf, CMD::GET_SESSION_ID, IDENT_SIZE, COMMAND_SIZE);
 
     SSL_write(thread->ssl, returnBuf, HEADER_SIZE);
 }
@@ -339,7 +342,7 @@ void CSServer::handleCreateAccount(Thread* thread)
     email = scanString(thread->ssl, MAX_LOGIN_FIELD_SIZE, &err);
 
     if(err) {
-        returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
+        returnWithCode(thread->ssl, thread->session_id, CMD::CREATE_ACCOUNT, err);
         return;
     }
 
@@ -347,7 +350,7 @@ void CSServer::handleCreateAccount(Thread* thread)
     password = scanString(thread->ssl, MAX_LOGIN_FIELD_SIZE, &err);
 
     if(err) {
-        returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
+        returnWithCode(thread->ssl, thread->session_id, CMD::CREATE_ACCOUNT, err);
         return;
     }
 
@@ -358,14 +361,14 @@ void CSServer::handleCreateAccount(Thread* thread)
 
     // if format error, return before making account
     if(err) {
-        returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
+        returnWithCode(thread->ssl, thread->session_id, CMD::CREATE_ACCOUNT, err);
         return;
     }
 
     // create the account
     err = _am.createAccount(username.c_str(), email.c_str(), password.c_str());
 
-    returnWithCode(thread->ssl, thread->session_id, CREATE_ACCOUNT, err);
+    returnWithCode(thread->ssl, thread->session_id, CMD::CREATE_ACCOUNT, err);
 }
 
 
@@ -385,7 +388,7 @@ void CSServer::handleLogin(Thread* thread)
     username = scanString(thread->ssl, MAX_LOGIN_FIELD_SIZE, &err);
 
     if(err) {
-        returnWithCode(thread->ssl, thread->session_id, LOGIN, err);
+        returnWithCode(thread->ssl, thread->session_id, CMD::LOGIN, err);
         return;
     }
 
@@ -393,7 +396,7 @@ void CSServer::handleLogin(Thread* thread)
     password = scanString(thread->ssl, MAX_LOGIN_FIELD_SIZE, &err);
 
     if(err) {
-        returnWithCode(thread->ssl, thread->session_id, LOGIN, err);
+        returnWithCode(thread->ssl, thread->session_id, CMD::LOGIN, err);
         return;
     }
 
@@ -401,16 +404,25 @@ void CSServer::handleLogin(Thread* thread)
     accountInfo = _am.login(username.c_str(), password.c_str(), &err);
 
     if(err) {
-        returnWithCode(thread->ssl, thread->session_id, LOGIN, err);
+        returnWithCode(thread->ssl, thread->session_id, CMD::LOGIN, err);
         return;
     }
 
     // set uid in session
     err = _sm.replaceUid(thread->session_id, accountInfo->uid);
 
-    returnWithCode(thread->ssl, thread->session_id, LOGIN, err);
+    returnWithCode(thread->ssl, thread->session_id, CMD::LOGIN, err);
 }
 
+
+/**
+ * Handle post to database
+ * 
+ */
+void CSServer::handlePost(Thread* thread, uint8_t flags)
+{
+
+}
 
 /**
  * Read the specified number of bytes from the buffer client descriptor 

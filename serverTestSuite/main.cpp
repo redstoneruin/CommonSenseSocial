@@ -173,7 +173,7 @@ int headerTest1()
    char commandBuf[HEADER_SIZE];
 
    placeInt(commandBuf, 0, 0, 4);
-   placeInt(commandBuf, GET_SESSION_ID, 4, 2);
+   placeInt(commandBuf, CMD::GET_SESSION_ID, 4, 2);
 
    if((written = SSL_write(ssl, commandBuf, HEADER_SIZE)) <= 0) {
       return -1;
@@ -200,7 +200,7 @@ int createAccountTests()
   char commandBuf[STR_LEN_SIZE+SHORT_BUF_SIZE];
 
   placeInt(commandBuf, sessionID, 0, IDENT_SIZE);
-  placeInt(commandBuf, CREATE_ACCOUNT, IDENT_SIZE, COMMAND_SIZE);
+  placeInt(commandBuf, CMD::CREATE_ACCOUNT, IDENT_SIZE, COMMAND_SIZE);
   if(SSL_write(ssl, commandBuf, HEADER_SIZE) <= 0) return -1;
 
 
@@ -234,7 +234,7 @@ int loginTest1()
   char commandBuf[STR_LEN_SIZE+SHORT_BUF_SIZE];
 
   placeInt(commandBuf, sessionID, 0, IDENT_SIZE);
-  placeInt(commandBuf, LOGIN, IDENT_SIZE, COMMAND_SIZE);
+  placeInt(commandBuf, CMD::LOGIN, IDENT_SIZE, COMMAND_SIZE);
   if(SSL_write(ssl, commandBuf, HEADER_SIZE) <= 0) return -1;
 
 

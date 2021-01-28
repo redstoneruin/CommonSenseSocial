@@ -6,14 +6,6 @@
  * Common definitions for Common Sense Social server/client protocol
  */
 
-/**
- * Server command identifiers
- */
-#define GET_SESSION_ID 0x1001
-#define CREATE_ACCOUNT 0x1002
-#define LOGIN 0x1003
-#define GET 0x2001
-#define POST 0x2002
 
 /**
  * Server command flags
@@ -46,6 +38,15 @@
 #define MAX_ITEM_NAME_SIZE 64
 #define MAX_LOGIN_FIELD_SIZE 128
 
+
+
+enum CMD {
+   GET_SESSION_ID = 0x1001,
+   CREATE_ACCOUNT = 0x1002,
+   LOGIN = 0x1003,
+   GET = 0x2001,
+   POST = 0x2002
+};
 
 enum ERROR {
 	PARSE = 1,
