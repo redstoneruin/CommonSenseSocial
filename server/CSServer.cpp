@@ -283,6 +283,7 @@ int CSServer::parseMessage(Thread* thread)
 {
     thread->session_id = getInt(thread->threadBuf, 0, 4);
     uint16_t command = getInt(thread->threadBuf, 4, 2);
+    thread->full_command = command;
     
     uint8_t flags = (command & 0x0FF0) >> 4;
     command = command & 0xF00F;
@@ -431,7 +432,22 @@ void CSServer::handleLogin(Thread* thread)
  */
 void CSServer::handlePost(Thread* thread, uint8_t flags)
 {
+    int err;
+    uint16_t dataSize;
     DTYPE type;
+    PERM perm;
+    request_info_s requestInfo;
+    char* data;
+    session_s* session;
+    string path;
+
+    // check whether this user is logged in
+    session = _sm.getSession(thread->session_id);
+
+    if(session == nullptr) {
+        returnWithCode(thread->ssl, thread->session_id, thread->full_command, ERROR::NO_SESSION);
+        return;
+    }
 
     // set post type
     switch(flags) {
@@ -459,9 +475,38 @@ void CSServer::handlePost(Thread* thread, uint8_t flags)
     }
 
     if(type == DTYPE::NONE) {
-        returnWithCode(thread->ssl, thread->session_id, CMD::POST & (flags << 8), ERROR::TYPE_INVAL);
+        returnWithCode(thread->ssl, thread->session_id, thread->full_command, ERROR::TYPE_INVAL);
         return;
     }
+
+    perm = static_cast<PERM>(scanInt(thread->ssl, 1, &err));
+
+    if(err) {
+        returnWithCode(thread->ssl, thread->session_id, thread->full_command, err);
+        return;
+    }
+
+
+    path = scanString(thread->ssl, MAX_PATH_SIZE, &err);
+
+    if(err) {
+        returnWithCode(thread->ssl, thread->session_id, thread->full_command, err);
+        return;
+    }
+
+    data = scanData(thread->ssl, &dataSize, &err);
+
+    if(err) {
+        returnWithCode(thread->ssl, thread->session_id, thread->full_command, err);
+        return;
+    }
+
+    requestInfo.uid = session->uid;
+    requestInfo.perms = "w";
+
+    err = _dbam.replaceItem(DEFAULT_DB, path.c_str(), requestInfo, data, dataSize, type, perm);
+
+    returnWithCode(thread->ssl, thread->session_id, thread->full_command, err);
 }
 
 /**
@@ -519,14 +564,14 @@ string CSServer::scanString(SSL* ssl, uint16_t maxSize, int* err)
 
     if(SSL_read(ssl, buf, STR_LEN_SIZE) < STR_LEN_SIZE) {
         if(err) *err = ERROR::COMMAND_FORMAT;
-        return nullptr;
+        return string();
     }
 
     strSize = getInt(buf, STR_LEN_SIZE);
 
-    if(strSize > maxSize) {
+    if(strSize > maxSize || strSize == 0) {
         if(err) *err = ERROR::COMMAND_FORMAT;
-        return nullptr;
+        return string();
     }
 
     ret = (char*) malloc (strSize+1);
@@ -534,7 +579,7 @@ string CSServer::scanString(SSL* ssl, uint16_t maxSize, int* err)
     if(SSL_read(ssl, ret, strSize) < strSize) {
         if(err) *err = ERROR::COMMAND_FORMAT;
         free(ret);
-        return nullptr;
+        return string();
     }
 
     ret[strSize] = 0;
@@ -543,9 +588,70 @@ string CSServer::scanString(SSL* ssl, uint16_t maxSize, int* err)
 
     free(ret);
 
+    *err = 0;
     return toRet;
 }
 
+
+/**
+ * Scan data from the SSL stream
+ * @param ssl SSL socket to parse data from
+ * @param dataSize Container for size of data
+ * @param err Cointainer for error code
+ */
+char* CSServer::scanData(SSL* ssl, uint16_t* dataSize, int* err)
+{
+    uint16_t size;
+    char buf[STR_LEN_SIZE];
+    char* ret;
+
+    if(SSL_read(ssl, buf, STR_LEN_SIZE) < STR_LEN_SIZE) {
+        if(err) *err = ERROR::COMMAND_FORMAT;
+        return nullptr;
+    }
+
+    size = getInt(buf, STR_LEN_SIZE);
+
+    if(size == 0) {
+        if(err) *err = ERROR::COMMAND_FORMAT;
+        return nullptr;
+    }
+
+    ret = (char*) malloc (size);
+
+    if(SSL_read(ssl, ret, size) < size) {
+        if(err) *err = ERROR::COMMAND_FORMAT;
+        free(ret);
+        return nullptr;
+    }
+
+    *dataSize = size;
+    *err = 0;
+    return ret;
+}
+
+
+/**
+ * Scan int value from SSL stream
+ * @param ssl SSL socket to parse int from
+ * @param size Size of int in bytes
+ * @param err Container for error code
+ */
+uint64_t CSServer::scanInt(SSL* ssl, uint16_t size, int* err)
+{
+    uint64_t ret;
+    char* buf = (char*) malloc (size);
+    
+    if(SSL_read(ssl, buf, size) < size) {
+        if(err) *err = ERROR::COMMAND_FORMAT;
+        return 0;
+    }
+
+    ret = getInt(buf, size);
+
+    free(buf);
+    return ret;
+}
 
 
 /**

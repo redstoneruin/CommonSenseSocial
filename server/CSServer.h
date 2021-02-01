@@ -21,6 +21,7 @@
 typedef struct Thread {
     int cl;
     uint32_t session_id;
+    uint16_t full_command;
     sem_t mutex;
     SSL* ssl;
     char threadBuf[DEFAULT_BUF_SIZE];
@@ -75,7 +76,9 @@ private:
 
     void returnWithCode                 (SSL* ssl, uint32_t session_id, uint16_t command, int code);
 
-    std::string scanString                    (SSL* ssl, uint16_t maxSize, int* err = nullptr);
+    std::string scanString              (SSL* ssl, uint16_t maxSize, int* err = nullptr);
+    char* scanData                      (SSL* ssl, uint16_t* dataSize, int* err = nullptr);
+    uint64_t scanInt                    (SSL* ssl, uint16_t size, int* err = nullptr);
 
     char* getCStr                       (const char* src, uint16_t size);
     char* getCStr                       (const char* src, uint16_t start, uint16_t size);

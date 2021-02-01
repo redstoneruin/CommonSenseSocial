@@ -20,6 +20,7 @@
 #define MAX_COLLECTION_NAME_SIZE 64
 #define MAX_ITEM_NAME_SIZE 64
 #define MAX_LOGIN_FIELD_SIZE 128
+#define MAX_PATH_SIZE 2048
 
 
 
@@ -41,41 +42,41 @@ enum FLAGS {
 };
 
 enum ERROR {
-   SUCCESS = 0,
-	PARSE = 1,
-	NO_PERMS = 2,
-	PATH_INVAL = 3,
-	PARAM_INVAL = 4,
-	NO_DB = 5,
-	FILE_OPEN = 6,
-	FILE_READ = 7,
-	FILE_WRITE = 8,
-	PARENT_COLL_INVAL = 9,
-	COLL_INVAL = 10,
-	ITEM_CREATE = 11,
-	NO_SESSION = 12,
-	NO_ACCOUNT = 13,
-	DUPLICATE_SESSION = 14,
-	DUPLICATE_ACCOUNT = 15,
-   BAD_LOGIN = 16,
-   COMMAND_FORMAT = 17,
-   TYPE_INVAL = 18
+    SUCCESS = 0,
+  	PARSE = 1,
+  	NO_PERMS = 2,
+  	PATH_INVAL = 3,
+  	PARAM_INVAL = 4,
+  	NO_DB = 5,
+  	FILE_OPEN = 6,
+  	FILE_READ = 7,
+  	FILE_WRITE = 8,
+  	PARENT_COLL_INVAL = 9,
+  	COLL_INVAL = 10,
+  	ITEM_CREATE = 11,
+  	NO_SESSION = 12,
+  	NO_ACCOUNT = 13,
+  	DUPLICATE_SESSION = 14,
+  	DUPLICATE_ACCOUNT = 15,
+    BAD_LOGIN = 16,
+    COMMAND_FORMAT = 17,
+    TYPE_INVAL = 18
 };
 
 enum PERM {
-    PRIVATE,
-    UNLISTED,
-    PUBLIC
+    PRIVATE = 0,
+    UNLISTED = 1,
+    PUBLIC = 2
 };
 
 enum DTYPE {
-    NONE,
-    TEXT,
-    IMAGE,
-    AUDIO,
-    VIDEO,
-    STREAM,
-    AUDIO_STREAM
+    NONE = 0,
+    TEXT = 1,
+    IMAGE = 2,
+    AUDIO = 3,
+    VIDEO = 4,
+    STREAM = 5,
+    AUDIO_STREAM = 6
 };
 
 /**
