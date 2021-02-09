@@ -53,6 +53,7 @@ void placeInt(void* voidBuf, uint64_t value, uint16_t start, uint16_t size);
 int headerTest1();
 int loginTest1();
 int createAccountTests();
+int postTests();
 
 
 int main(int argc, char* argv[])
@@ -253,6 +254,26 @@ int loginTest1()
 
   return static_cast<int>(getInt(commandBuf, HEADER_SIZE, ERR_CODE_SIZE));
 
+}
+
+int postTests()
+{
+  int bytesRead, err;
+  char commandBuf[STR_LEN_SIZE+SHORT_BUF_SIZE];
+
+  placeInt(commandBuf, sessionID, 0, IDENT_SIZE);
+  placeInt(commandBuf, CMD::POST, IDENT_SIZE, COMMAND_SIZE);
+  if(SSL_write(ssl, commandBuf, HEADER_SIZE) <= 0) return -1;
+
+  strncpy(commandBuf, "w", 1);
+  if(SSL_write(ssl, commandBuf, 1) <= 0) return -2;
+
+  placeInt(commandBuf, SHORT_BUF_SIZE, 0, STR_LEN_SIZE);
+  strncpy(commandBuf+STR_LEN_SIZE, "", SHORT_BUF_SIZE);
+
+  if(SSL_write(ssl, commandBuf, STR_LEN_SIZE + SHORT_BUF_SIZE) <= 0) return -3;
+
+  return 0;
 }
 
 
